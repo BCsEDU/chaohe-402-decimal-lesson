@@ -148,6 +148,23 @@
         color: #92400e;
       }
 
+      .nav-link-btn {
+        text-decoration: none;
+        border: 2px solid #93c5fd;
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: 14px;
+        font-weight: 900;
+        padding: 7px 12px;
+        border-radius: 12px;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+
+      .nav-link-btn:active {
+        transform: scale(0.95);
+      }
+
       /* 主舞台 */
       main {
         position: relative;
@@ -1461,6 +1478,11 @@
           position: static;
           height: auto;
           min-height: 100vh;
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+        header {
+          flex-wrap: wrap;
+          padding: 8px 12px;
         }
         .compare-stage,
         .pack-stage,
@@ -1482,6 +1504,7 @@
           <button class="tab-btn" data-tab="t4">4. 雙胞胎快篩</button>
         </div>
         <div class="hdr-actions">
+          <a class="nav-link-btn" href="length.html">📏 公尺↔公分</a>
           <button class="icon-btn" id="btn-blind">👁 蓋住答案</button>
           <button class="icon-btn" id="btn-reset">↺ 重置</button>
         </div>
