@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>1 公尺長尺折成百格板｜小四下 P.91</title>
+    <style>
+      :root {
+        --bg: #eef4fb;
+        --surface: #ffffff;
+        --surface-soft: #f8fbff;
+        --border: #c5d7ea;
+        --primary: #1d4ed8;
+        --text: #0f172a;
+        --muted: #64748b;
+        --shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      #app {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-rows: 56px minmax(0, 1fr);
+      }
+
+      /* 頂部極簡列 */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 16px;
+        background: var(--surface);
+        border-bottom: 2px solid var(--border);
+        z-index: 20;
+      }
+
+      .brand-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        white-space: nowrap;
+      }
+
+      .back-link {
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 800;
+        padding: 5px 11px;
+        border-radius: 999px;
+        background: #f1f5f9;
+        color: #475569;
+        border: 1.5px solid #cbd5e1;
+      }
+
+      .brand {
+        font-size: 19px;
+        font-weight: 900;
+        color: #1e3a8a;
+      }
+
+      .hdr-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .icon-btn {
+        border: 2px solid var(--border);
+        background: var(--surface-soft);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 800;
+        padding: 7px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+
+      .icon-btn:active {
+        transform: scale(0.95);
+      }
+
+      .icon-btn.on {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
+      .icon-btn.tip-on {
+        background: #dbeafe;
+        border-color: #2563eb;
+        color: #1e40af;
+      }
+
+      /* 提問小抄浮動條 */
+      .prompt-drawer {
+        position: fixed;
+        top: 64px;
+        right: 16px;
+        width: min(460px, calc(100vw - 32px));
+        background: #fffbeb;
+        border: 2.5px solid #f59e0b;
+        border-radius: 18px;
+        padding: 14px 16px;
+        box-shadow: 0 14px 32px rgba(15, 23, 42, 0.18);
+        z-index: 30;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .prompt-drawer.open {
+        display: flex;
+        animation: dropIn 0.2s ease;
+      }
+
+      @keyframes dropIn {
+        from {
+          opacity: 0;
+          transform: translateY(-8px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .pd-title {
+        font-size: 14px;
+        font-weight: 900;
+        color: #b45309;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .pd-q {
+        font-size: 15px;
+        font-weight: 800;
+        color: #1e293b;
+        background: #fff;
+        padding: 8px 11px;
+        border-radius: 10px;
+        border: 1.5px solid #fde68a;
+        line-height: 1.45;
+      }
+
+      .pd-exp {
+        font-size: 14.5px;
+        font-weight: 800;
+        color: #065f46;
+        background: #ecfdf5;
+        padding: 8px 11px;
+        border-radius: 10px;
+        border: 1.5px solid #6ee7b7;
+        line-height: 1.45;
+      }
+
+      /* 主舞台 */
+      main {
+        min-height: 0;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 10px;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 8px 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .btn-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .pill {
+        border: 2px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 15px;
+        font-weight: 800;
+        padding: 6px 13px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .pill:active {
+        transform: scale(0.95);
+      }
+
+      .pill.on {
+        background: #1e40af;
+        border-color: #1e40af;
+        color: #fff;
+      }
+
+      .slider-row {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        flex: 1;
+        min-width: 0;
+        max-width: 440px;
+      }
+
+      .cm-slider {
+        flex: 1;
+        accent-color: #2563eb;
+        height: 8px;
+        cursor: pointer;
+      }
+
+      .action-fab {
+        border: none;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        font-size: 16px;
+        font-weight: 900;
+        padding: 10px 20px;
+        border-radius: 14px;
+        cursor: pointer;
+        box-shadow: 0 5px 14px rgba(37, 99, 235, 0.32);
+        transition: transform 0.15s ease;
+        white-space: nowrap;
+      }
+
+      .action-fab:active {
+        transform: scale(0.96);
+      }
+
+      .num-font {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .masked {
+        color: transparent !important;
+        position: relative;
+      }
+
+      .masked * {
+        color: transparent !important;
+      }
+
+      .masked .v-bar {
+        background: transparent !important;
+      }
+
+      .masked::after {
+        content: "?";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #d97706 !important;
+      }
+
+      /* 動畫主畫布 */
+      .morph-card {
+        flex: 1;
+        min-height: 0;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 12px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: var(--shadow);
+      }
+
+      .morph-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
+      .morph-stage {
+        position: relative;
+        flex: 1;
+        min-height: 240px;
+        background: #f8fafc;
+        border: 2.5px solid #cbd5e1;
+        border-radius: 18px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 12px 0;
+      }
+
+      .morph-stage.no-anim *,
+      .morph-stage.no-anim .ruler-box {
+        transition: none !important;
+      }
+
+      .ruler-box {
+        position: relative;
+        width: 100%;
+        height: 136px;
+        flex-shrink: 0;
+        transition: height 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      /* 清楚格線的 1cm 單元格 */
+      .m-unit {
+        position: absolute;
+        border-radius: 2px;
+        border: 1.5px solid #334155;
+        background: #ffffff;
+        transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1), top 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+          width 0.65s cubic-bezier(0.22, 1, 0.36, 1), height 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+          background-color 0.2s ease, border-color 0.2s ease;
+        cursor: pointer;
+      }
+
+      .m-unit:hover {
+        filter: brightness(0.95);
+      }
+
+      .m-unit.active-strip {
+        background: #fb923c;
+        border-color: #7c2d12;
+      }
+
+      .m-unit.active-dot {
+        background: #facc15;
+        border: 2px solid #854d0e;
+      }
+
+      /* 刻度棒與大字 10 個一數標籤 */
+      .m-tick-line {
+        position: absolute;
+        width: 3px;
+        height: 14px;
+        background: #0f172a;
+        border-radius: 2px;
+        transform: translateX(-50%);
+        transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1), top 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+        pointer-events: none;
+      }
+
+      .m-tick-lbl {
+        position: absolute;
+        font-size: clamp(19px, 2vw, 26px);
+        font-weight: 900;
+        line-height: 1;
+        color: #0f172a;
+        transform: translateX(-50%);
+        transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1), top 0.65s cubic-bezier(0.22, 1, 0.36, 1),
+          color 0.2s ease, transform 0.65s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.25s ease;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+
+      .m-tick-lbl.reached {
+        color: #ea580c;
+      }
+
+      .m-tick-lbl.exact {
+        color: #1d4ed8;
+        text-decoration: underline 3px #1d4ed8;
+      }
+
+      /* 換算結果（置於長尺與百格正上方置中，緊貼圖形） */
+      .morph-readout {
+        position: relative;
+        z-index: 10;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .eq-chain {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-wrap: nowrap;
+        gap: 12px;
+        font-size: 28px;
+        font-weight: 900;
+        white-space: nowrap;
+      }
+
+      .eq-chip {
+        padding: 6px 14px;
+        border-radius: 12px;
+        border: 2.5px solid;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .v-frac {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.05;
+      }
+
+      .v-num,
+      .v-den {
+        font-size: 23px;
+        font-weight: 900;
+        padding: 0 5px;
+      }
+
+      .v-bar {
+        width: 100%;
+        min-width: 44px;
+        height: 3px;
+        background: currentColor;
+        border-radius: 2px;
+        margin: 2px 0;
+      }
+
+      .eq-chip.cm {
+        background: #fef9c3;
+        border-color: #eab308;
+        color: #854d0e;
+      }
+
+      .eq-chip.frac {
+        background: #ffedd5;
+        border-color: #fb923c;
+        color: #9a3412;
+      }
+
+      .eq-chip.m {
+        background: #dbeafe;
+        border-color: #3b82f6;
+        color: #1e40af;
+      }
+
+      .strip-badge {
+        font-size: 16px;
+        font-weight: 900;
+        padding: 6px 14px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        color: #334155;
+        border: 2px solid #cbd5e1;
+      }
+
+      @media (max-width: 900px) {
+        html,
+        body {
+          position: static;
+          overflow-y: auto;
+          overflow-x: hidden;
+          height: auto;
+        }
+        #app {
+          position: static;
+          height: auto;
+          min-height: 100vh;
+          grid-template-rows: auto minmax(0, 1fr);
+        }
+        header {
+          flex-wrap: wrap;
+          padding: 8px 12px;
+        }
+        .eq-chain {
+          font-size: 20px;
+          gap: 6px;
+        }
+        .v-num,
+        .v-den {
+          font-size: 18px;
+        }
+        .m-tick-lbl {
+          font-size: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="brand-wrap">
+          <a class="back-link" href="index.html">← 百格迷思</a>
+          <div class="brand">📏 1 公尺長尺折成百格板</div>
+        </div>
+        <div class="hdr-actions">
+          <button class="icon-btn" id="btn-tips">💬 關鍵提問</button>
+          <button class="icon-btn" id="btn-blind">👁 蓋住答案</button>
+          <button class="icon-btn" id="btn-reset">↺ 重置</button>
+        </div>
+      </header>
+
+      <!-- 老師關鍵提問小抄（預設隱藏） -->
+      <div class="prompt-drawer" id="prompt-drawer">
+        <div class="pd-title">
+          <span>💬 P.91 長尺折百格：關鍵提問 ＆ 解釋</span>
+          <button class="pill" id="btn-close-tips" style="padding: 2px 10px; font-size: 12px">收起</button>
+        </div>
+        <div class="pd-q">
+          ❓ 問1：「以前 1 公分分成 10 格，1 毫米是 0.1 公分；現在 <strong>1 公尺分成 100 格</strong>，1 公分也是 0.1 公尺嗎？為什麼？」
+        </div>
+        <div class="pd-q">
+          ❓ 問2：「把長尺折起來變百格板後，<strong>10 公分</strong>剛好滿幾條？數數看 10、20、30……，<strong>60 公分</strong>是幾條？」
+        </div>
+        <div class="pd-exp">
+          💡 白話：「0.1 是分成 10 份裡的 1 份；1 公尺分成 100 份才看得到 1 公分，所以 1 公分就是百格板裡的 1 小格 ＝ <strong>0.01 公尺</strong>。每 10 公分折成 1 整條 ＝ <strong>0.1 公尺</strong>！」
+        </div>
+      </div>
+
+      <main>
+        <div class="toolbar">
+          <div class="btn-group">
+            <button class="pill on" data-cm="1">1 cm</button>
+            <button class="pill" data-cm="2">2 cm</button>
+            <button class="pill" data-cm="10">10 cm</button>
+            <button class="pill" data-cm="11">11 cm</button>
+            <button class="pill" data-cm="60">60 cm</button>
+            <button class="pill" data-cm="100">100 cm</button>
+          </div>
+          <div class="slider-row">
+            <button class="pill" id="btn-m10" style="padding: 4px 10px">-10</button>
+            <button class="pill" id="btn-m1" style="padding: 4px 10px">-1</button>
+            <input class="cm-slider" id="cm-slider" type="range" min="1" max="100" value="1" />
+            <button class="pill" id="btn-p1" style="padding: 4px 10px">+1</button>
+            <button class="pill" id="btn-p10" style="padding: 4px 10px">+10</button>
+            <span class="num-font" style="font-size: 20px; font-weight: 900; min-width: 68px; text-align: right" id="cm-val">
+              1 cm
+            </span>
+          </div>
+          <button class="action-fab" id="btn-fold">🪄 折疊成百格板！</button>
+        </div>
+
+        <div class="morph-card">
+          <div class="morph-head">
+            <strong style="font-size: 17px; color: #1e3a8a" id="mode-title">
+              📏 1 公尺長尺（每 10 公分一組，共 100 格）— 點格子選長度
+            </strong>
+            <div class="btn-group">
+              <span style="font-size: 14px; font-weight: 900; color: #c2410c; margin-right: 4px">
+                🟧 1條＝0.1m ｜ 🟨 1格＝0.01m
+              </span>
+              <span class="strip-badge num-font answer-target" id="strip-summary" style="padding: 4px 12px; font-size: 15px">
+                0 條 ＋ 1 顆
+              </span>
+              <button class="pill" id="btn-tail-zero" style="padding: 4px 12px; font-size: 14px">👀 顯示末尾 0</button>
+            </div>
+          </div>
+          <div class="morph-stage no-anim" id="morph-stage">
+            <div class="morph-readout" id="morph-readout">
+              <div class="eq-chain num-font">
+                <span class="eq-chip cm" id="eq-cm">1 公分</span>
+                <span>＝</span>
+                <span class="eq-chip frac answer-target" id="eq-frac">
+                  <span class="v-frac">
+                    <span class="v-num" id="eq-frac-num">1</span>
+                    <span class="v-bar"></span>
+                    <span class="v-den">100</span>
+                  </span>
+                  <span>公尺</span>
+                </span>
+                <span>＝</span>
+                <span class="eq-chip m answer-target" id="eq-m">0.01 公尺</span>
+              </div>
+            </div>
+            <div class="ruler-box" id="ruler-box"></div>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      const state = {
+        cm: 1,
+        folded: false,
+        showTailZero: false,
+        blind: false,
+        tipsOpen: false
+      };
+
+      const morphStage = document.getElementById("morph-stage");
+      const rulerBox = document.getElementById("ruler-box");
+      const readoutEl = document.getElementById("morph-readout");
+      const unitEls = [];
+      const tickLineEls = [];
+      const tickLblEls = [];
+
+      function initStage() {
+        rulerBox.innerHTML = "";
+        unitEls.length = 0;
+        tickLineEls.length = 0;
+        tickLblEls.length = 0;
+
+        for (let i = 0; i < 100; i++) {
+          const d = document.createElement("div");
+          d.className = "m-unit";
+          d.title = `${i + 1} cm`;
+          d.addEventListener("click", () => {
+            state.cm = i + 1;
+            document.getElementById("cm-slider").value = state.cm;
+            render();
+          });
+          rulerBox.appendChild(d);
+          unitEls.push(d);
+        }
+
+        // k = 0..10 (0, 10, 20, ..., 100)
+        for (let k = 0; k <= 10; k++) {
+          const line = document.createElement("div");
+          line.className = "m-tick-line";
+          rulerBox.appendChild(line);
+          tickLineEls.push(line);
+
+          const lbl = document.createElement("div");
+          lbl.className = "m-tick-lbl num-font";
+          lbl.textContent = `${k * 10}`;
+          rulerBox.appendChild(lbl);
+          tickLblEls.push(lbl);
+        }
+      }
+      initStage();
+
+      function layoutStage() {
+        const w = morphStage.clientWidth;
+        const h = morphStage.clientHeight;
+        if (!w || !h) return;
+
+        const cm = state.cm;
+        const fullStrips = Math.floor(cm / 10);
+        const readoutH = readoutEl.offsetHeight || 72;
+
+        if (!state.folded) {
+          // 展開：長尺緊跟在上方置中算式正下方
+          const padX = 36;
+          const groupGap = 4; // 9 個間隔 * 4px = 36px
+          const totalGap = groupGap * 9;
+          const barW = w - padX * 2 - totalGap;
+          const uw = barW / 100;
+          const uh = Math.min(82, Math.max(54, h * 0.25));
+          const topY = 4;
+          rulerBox.style.height = `${uh + 48}px`;
+
+          unitEls.forEach((el, i) => {
+            const groupIdx = Math.floor(i / 10);
+            const x = padX + i * uw + groupIdx * groupGap;
+            el.style.left = `${x}px`;
+            el.style.top = `${topY}px`;
+            el.style.width = `${Math.max(3, uw + 0.5)}px`;
+            el.style.height = `${uh}px`;
+            el.classList.toggle("active-strip", i < fullStrips * 10);
+            el.classList.toggle("active-dot", i >= fullStrips * 10 && i < cm);
+          });
+
+          tickLineEls.forEach((line, k) => {
+            const x =
+              k === 0
+                ? padX
+                : k === 10
+                ? padX + 100 * uw + 9 * groupGap
+                : padX + k * 10 * uw + k * groupGap - groupGap / 2;
+            line.style.opacity = "1";
+            line.style.left = `${x}px`;
+            line.style.top = `${topY + uh + 2}px`;
+          });
+
+          tickLblEls.forEach((lbl, k) => {
+            const val = k * 10;
+            const x =
+              k === 0
+                ? padX
+                : k === 10
+                ? padX + 100 * uw + 9 * groupGap
+                : padX + k * 10 * uw + k * groupGap - groupGap / 2;
+            lbl.textContent = k === 10 ? "100" : `${val}`;
+            lbl.style.opacity = "1";
+            lbl.style.left = `${x}px`;
+            lbl.style.top = `${topY + uh + 20}px`;
+            lbl.style.transform = k === 0 ? "translateX(0%)" : k === 10 ? "translateX(-100%)" : "translateX(-50%)";
+            lbl.classList.toggle("reached", val > 0 && val <= cm);
+            lbl.classList.toggle("exact", val > 0 && val === cm);
+          });
+        } else {
+          // 折疊：10×10 百格板緊跟在上方置中算式正下方，下方對齊顯示 10, 20, ..., 100！
+          const colGap = 7;
+          const availGridH = h - readoutH - 16 - 46 - 28;
+          const cw = Math.min((w - 80 - colGap * 9) / 10, availGridH / 10, 46);
+          const totalW = cw * 10 + colGap * 9;
+          const totalH = cw * 10;
+          const ox = (w - totalW) / 2;
+          const oy = 0;
+          rulerBox.style.height = `${totalH + 46}px`;
+
+          unitEls.forEach((el, i) => {
+            const col = Math.floor(i / 10);
+            const row = i % 10;
+            el.style.left = `${ox + col * (cw + colGap)}px`;
+            el.style.top = `${oy + row * cw}px`;
+            el.style.width = `${cw}px`;
+            el.style.height = `${cw}px`;
+            el.classList.toggle("active-strip", i < fullStrips * 10);
+            el.classList.toggle("active-dot", i >= fullStrips * 10 && i < cm);
+          });
+
+          tickLineEls.forEach((line, k) => {
+            if (k === 0) {
+              line.style.opacity = "0";
+              return;
+            }
+            const col = k - 1;
+            const cx = ox + col * (cw + colGap) + cw / 2;
+            line.style.opacity = "1";
+            line.style.left = `${cx}px`;
+            line.style.top = `${oy + totalH + 2}px`;
+          });
+
+          tickLblEls.forEach((lbl, k) => {
+            if (k === 0) {
+              lbl.style.opacity = "0";
+              return;
+            }
+            const val = k * 10;
+            const col = k - 1;
+            const cx = ox + col * (cw + colGap) + cw / 2;
+            lbl.textContent = `${val}`;
+            lbl.style.opacity = "1";
+            lbl.style.left = `${cx}px`;
+            lbl.style.top = `${oy + totalH + 18}px`;
+            lbl.style.transform = "translateX(-50%)";
+            lbl.classList.toggle("reached", val <= cm);
+            lbl.classList.toggle("exact", val === cm);
+          });
+        }
+      }
+
+      window.addEventListener("resize", layoutStage);
+
+      function render() {
+        const cm = state.cm;
+        document.getElementById("cm-val").textContent = `${cm} cm`;
+        document.getElementById("cm-slider").value = cm;
+
+        document.querySelectorAll("[data-cm]").forEach((b) => {
+          b.classList.toggle("on", Number(b.dataset.cm) === cm);
+        });
+
+        document.getElementById("btn-fold").textContent = state.folded ? "📏 展開回 1 公尺長尺" : "🪄 折疊成百格板！";
+        document.getElementById("mode-title").textContent = state.folded
+          ? "🟩 百格板（10 條 × 10 顆 ＝ 100 格）— 下方每條十個一數"
+          : "📏 1 公尺長尺（每 10 公分一組，共 100 格）— 直接點格子也能選長度";
+
+        document.getElementById("eq-cm").textContent = `${cm} 公分`;
+        document.getElementById("eq-frac-num").textContent = `${cm}`;
+
+        let mStr = (cm / 100).toFixed(2);
+        if (!state.showTailZero) {
+          if (cm === 100) mStr = "1";
+          else if (cm % 10 === 0) mStr = (cm / 100).toFixed(1);
+        }
+        document.getElementById("eq-m").textContent = `${mStr} 公尺`;
+
+        const strips = Math.floor(cm / 10);
+        const dots = cm % 10;
+        document.getElementById("strip-summary").textContent = `${strips} 條 ＋ ${dots} 顆`;
+
+        layoutStage();
+        applyBlind();
+      }
+
+      function applyBlind() {
+        document.querySelectorAll(".answer-target").forEach((el) => {
+          el.classList.toggle("masked", state.blind);
+        });
+      }
+
+      function adjCm(delta) {
+        state.cm = Math.max(1, Math.min(100, state.cm + delta));
+        render();
+      }
+
+      document.querySelectorAll("[data-cm]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.cm = Number(btn.dataset.cm);
+          render();
+        });
+      });
+
+      document.getElementById("cm-slider").addEventListener("input", (e) => {
+        state.cm = Number(e.target.value);
+        render();
+      });
+
+      document.getElementById("btn-m10").addEventListener("click", () => adjCm(-10));
+      document.getElementById("btn-m1").addEventListener("click", () => adjCm(-1));
+      document.getElementById("btn-p1").addEventListener("click", () => adjCm(1));
+      document.getElementById("btn-p10").addEventListener("click", () => adjCm(10));
+
+      document.getElementById("btn-fold").addEventListener("click", () => {
+        state.folded = !state.folded;
+        render();
+      });
+
+      document.getElementById("btn-tail-zero").addEventListener("click", (e) => {
+        state.showTailZero = !state.showTailZero;
+        e.currentTarget.classList.toggle("on", state.showTailZero);
+        render();
+      });
+
+      document.getElementById("btn-tips").addEventListener("click", (e) => {
+        state.tipsOpen = !state.tipsOpen;
+        e.currentTarget.classList.toggle("tip-on", state.tipsOpen);
+        document.getElementById("prompt-drawer").classList.toggle("open", state.tipsOpen);
+      });
+
+      document.getElementById("btn-close-tips").addEventListener("click", () => {
+        state.tipsOpen = false;
+        document.getElementById("btn-tips").classList.remove("tip-on");
+        document.getElementById("prompt-drawer").classList.remove("open");
+      });
+
+      document.getElementById("btn-blind").addEventListener("click", (e) => {
+        state.blind = !state.blind;
+        e.currentTarget.classList.toggle("on", state.blind);
+        e.currentTarget.textContent = state.blind ? "👀 顯示答案" : "👁 蓋住答案";
+        applyBlind();
+      });
+
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        state.cm = 1;
+        state.folded = false;
+        state.showTailZero = false;
+        document.getElementById("btn-tail-zero").classList.remove("on");
+        render();
+      });
+
+      render();
+      requestAnimationFrame(() => {
+        layoutStage();
+        requestAnimationFrame(() => {
+          morphStage.classList.remove("no-anim");
+        });
+      });
+    </script>
+  </body>
+</html>

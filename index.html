@@ -1,0 +1,2686 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>二位小數｜視覺破迷思互動白板</title>
+    <style>
+      :root {
+        --bg: #eef4fb;
+        --surface: #ffffff;
+        --surface-soft: #f8fbff;
+        --border: #c5d7ea;
+        --primary: #1d4ed8;
+        --primary-soft: #dbeafe;
+        --text: #0f172a;
+        --muted: #64748b;
+        --one-bg: #2563eb;
+        --one-bd: #1e40af;
+        --tenth-bg: #f97316;
+        --tenth-bd: #c2410c;
+        --hundredth-bg: #fef08a;
+        --hundredth-bd: #ca8a04;
+        --ok: #16a34a;
+        --ok-soft: #dcfce7;
+        --bad: #dc2626;
+        --bad-soft: #fee2e2;
+        --shadow: 0 6px 20px rgba(15, 23, 42, 0.08);
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-user-select: none;
+        user-select: none;
+        -webkit-touch-callout: none;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      html,
+      body {
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        overscroll-behavior: none;
+        font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+        color: var(--text);
+        background: var(--bg);
+      }
+
+      #app {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        grid-template-rows: 56px minmax(0, 1fr);
+      }
+
+      /* 頂部極簡列 */
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 0 14px;
+        background: var(--surface);
+        border-bottom: 2px solid var(--border);
+        z-index: 10;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 18px;
+        font-weight: 900;
+        color: #1e3a8a;
+        white-space: nowrap;
+      }
+
+      .tabs {
+        display: flex;
+        gap: 6px;
+        overflow-x: auto;
+        scrollbar-width: none;
+      }
+
+      .tabs::-webkit-scrollbar {
+        display: none;
+      }
+
+      .tab-btn {
+        border: 2px solid var(--border);
+        background: var(--surface-soft);
+        color: #334155;
+        font-size: 15px;
+        font-weight: 800;
+        padding: 7px 14px;
+        border-radius: 999px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+
+      .tab-btn:active {
+        transform: scale(0.96);
+      }
+
+      .tab-btn.active {
+        background: var(--primary);
+        border-color: #1e40af;
+        color: #fff;
+        box-shadow: 0 3px 10px rgba(29, 78, 216, 0.28);
+      }
+
+      .hdr-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .icon-btn {
+        border: 2px solid var(--border);
+        background: var(--surface-soft);
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 800;
+        padding: 7px 12px;
+        border-radius: 12px;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+      }
+
+      .icon-btn:active {
+        transform: scale(0.95);
+      }
+
+      .icon-btn.blind-on {
+        background: #fef3c7;
+        border-color: #f59e0b;
+        color: #92400e;
+      }
+
+      /* 主舞台 */
+      main {
+        position: relative;
+        min-height: 0;
+        padding: 12px 14px;
+      }
+
+      .panel {
+        display: none;
+        height: 100%;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .panel.active {
+        display: flex;
+      }
+
+      /* 通用小膠囊控制列 */
+      .toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 8px 14px;
+        box-shadow: var(--shadow);
+      }
+
+      .btn-group {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .pill {
+        border: 2px solid #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
+        font-size: 14px;
+        font-weight: 800;
+        padding: 6px 13px;
+        border-radius: 999px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .pill:active {
+        transform: scale(0.95);
+      }
+
+      .pill.on {
+        background: #1e40af;
+        border-color: #1e40af;
+        color: #fff;
+      }
+
+      .pill.orange {
+        background: #fff7ed;
+        border-color: #fb923c;
+        color: #c2410c;
+      }
+
+      .pill.orange.on {
+        background: #ea580c;
+        border-color: #c2410c;
+        color: #fff;
+      }
+
+      .pill.danger {
+        background: #fef2f2;
+        border-color: #f87171;
+        color: #b91c1c;
+      }
+
+      .pill.danger.on {
+        background: #dc2626;
+        border-color: #b91c1c;
+        color: #fff;
+      }
+
+      .pill.ok {
+        background: #f0fdf4;
+        border-color: #4ade80;
+        color: #15803d;
+      }
+
+      .pill.ok.on {
+        background: #16a34a;
+        border-color: #15803d;
+        color: #fff;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 12px;
+        border-radius: 12px;
+        font-size: 14px;
+        font-weight: 900;
+      }
+
+      .num-font {
+        font-variant-numeric: tabular-nums;
+      }
+
+      .masked {
+        color: transparent !important;
+        text-shadow: 0 0 18px rgba(15, 23, 42, 0.35);
+        position: relative;
+      }
+
+      .masked * {
+        color: transparent !important;
+        text-decoration-color: transparent !important;
+        text-shadow: none !important;
+      }
+
+      .masked::after {
+        content: "?";
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        color: #d97706;
+        text-shadow: none;
+      }
+
+      /* ===================== 分頁 1：7 顆 vs 7 條 ===================== */
+      .compare-stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 14px;
+        align-items: stretch;
+      }
+
+      .board-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 12px 16px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        box-shadow: var(--shadow);
+        position: relative;
+        min-height: 0;
+      }
+
+      .board-top {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+      }
+
+      .board-title {
+        font-size: 18px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .brush-toggle {
+        display: flex;
+        gap: 4px;
+        background: #f1f5f9;
+        padding: 3px;
+        border-radius: 10px;
+      }
+
+      .brush-btn {
+        border: none;
+        background: transparent;
+        padding: 4px 10px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 800;
+        color: #475569;
+        cursor: pointer;
+      }
+
+      .brush-btn.on {
+        background: #fff;
+        color: var(--primary);
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .grid-wrap {
+        position: relative;
+        width: min(100%, 340px);
+        aspect-ratio: 1 / 1;
+        display: grid;
+        place-items: center;
+      }
+
+      .hundred-grid {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        border: 3px solid #334155;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        touch-action: none;
+        cursor: crosshair;
+      }
+
+      .cell {
+        border-right: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+        transition: background-color 0.12s ease, transform 0.12s ease;
+      }
+
+      .cell:nth-child(10n) {
+        border-right: none;
+      }
+
+      .cell:nth-child(n + 91) {
+        border-bottom: none;
+      }
+
+      .cell.filled-left {
+        background: #fde047;
+        box-shadow: inset 0 0 0 1px rgba(202, 138, 4, 0.45);
+      }
+
+      .cell.filled-right {
+        background: #fb923c;
+        box-shadow: inset 0 0 0 1px rgba(194, 65, 12, 0.35);
+      }
+
+      .cell.ghost-overlay {
+        background: rgba(250, 204, 21, 0.96) !important;
+        box-shadow: inset 0 0 0 2.5px #b91c1c !important;
+        animation: pulseGhost 0.85s ease-in-out infinite alternate;
+      }
+
+      .hundred-grid.dim-for-compare .cell.filled-right:not(.ghost-overlay) {
+        background: #fed7aa;
+      }
+
+      @keyframes pulseGhost {
+        from {
+          transform: scale(0.92);
+        }
+        to {
+          transform: scale(1);
+        }
+      }
+
+      /* 十分條框線疊層：把每直排（10格）圈起來 */
+      .tenth-overlay {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.25s ease;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .tenth-overlay.show {
+        opacity: 1;
+      }
+
+      .tenth-col {
+        border-right: 3px dashed #1d4ed8;
+        background: rgba(59, 130, 246, 0.04);
+      }
+
+      .tenth-col:last-child {
+        border-right: none;
+      }
+
+      .tenth-col.full-strip {
+        background: rgba(249, 115, 22, 0.14);
+        box-shadow: inset 0 0 0 2px rgba(234, 88, 12, 0.55);
+      }
+
+      .readout-box {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: var(--surface-soft);
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 8px 14px;
+      }
+
+      .breakdown-tags {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+      }
+
+      .tag-unit {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 4px 10px;
+        border-radius: 10px;
+        border: 2px solid transparent;
+        min-width: 54px;
+      }
+
+      .tag-unit.strip {
+        background: #ffedd5;
+        border-color: #fdba74;
+        color: #9a3412;
+      }
+
+      .tag-unit.strip.zero-guard {
+        background: #fee2e2;
+        border-color: #ef4444;
+        color: #b91c1c;
+        animation: guardPulse 1.4s ease-in-out infinite;
+      }
+
+      @keyframes guardPulse {
+        0%,
+        100% {
+          box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.35);
+        }
+        50% {
+          box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+        }
+      }
+
+      .tag-unit.dot {
+        background: #fef9c3;
+        border-color: #facc15;
+        color: #854d0e;
+      }
+
+      .tag-val {
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1.1;
+      }
+
+      .tag-lbl {
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .big-decimal {
+        font-size: 38px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        color: #0f172a;
+        cursor: pointer;
+      }
+
+      .big-decimal .z-guard {
+        color: #dc2626;
+        text-decoration: underline wavy #dc2626 2px;
+      }
+
+      .big-decimal .z-tail {
+        color: #94a3b8;
+        transition: opacity 0.25s ease, width 0.25s ease;
+      }
+
+      .big-decimal .z-tail.hidden-tail {
+        opacity: 0;
+        display: inline-block;
+        width: 0;
+        overflow: hidden;
+      }
+
+      .vs-col {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .vs-circle {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--surface);
+        border: 3px solid var(--border);
+        display: grid;
+        place-items: center;
+        font-size: 26px;
+        font-weight: 900;
+        color: #1e40af;
+        box-shadow: var(--shadow);
+      }
+
+      .action-fab {
+        border: none;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        font-size: 15px;
+        font-weight: 900;
+        padding: 12px 14px;
+        border-radius: 16px;
+        cursor: pointer;
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+        text-align: center;
+        line-height: 1.25;
+        transition: transform 0.15s ease;
+      }
+
+      .action-fab:active {
+        transform: scale(0.95);
+      }
+
+      .ratio-pill {
+        background: #fef2f2;
+        border: 2px solid #fca5a5;
+        color: #b91c1c;
+        font-size: 14px;
+        font-weight: 900;
+        padding: 6px 10px;
+        border-radius: 12px;
+        text-align: center;
+        opacity: 0;
+        transform: translateY(6px);
+        transition: all 0.25s ease;
+      }
+
+      .ratio-pill.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+
+      /* ===================== 分頁 2：63 顆大變身 ===================== */
+      .pack-stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1.35fr 0.9fr;
+        gap: 14px;
+      }
+
+      .tray-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        box-shadow: var(--shadow);
+        min-height: 0;
+      }
+
+      .meter-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .meter-bar {
+        flex: 1;
+        height: 22px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+        border: 2px solid #cbd5e1;
+        position: relative;
+      }
+
+      .meter-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #facc15, #f97316);
+        transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .meter-fill.full {
+        background: linear-gradient(90deg, #3b82f6, #16a34a);
+      }
+
+      .brake-stamp {
+        padding: 5px 12px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 900;
+        white-space: nowrap;
+        border: 2px solid;
+      }
+
+      .brake-stamp.warn {
+        background: #fef2f2;
+        border-color: #ef4444;
+        color: #b91c1c;
+      }
+
+      .brake-stamp.pass {
+        background: #dcfce7;
+        border-color: #16a34a;
+        color: #15803d;
+      }
+
+      .trays-container {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        overflow-y: auto;
+        padding: 4px;
+      }
+
+      .tray-box {
+        width: clamp(195px, 21vw, 248px);
+        aspect-ratio: 1 / 1;
+        border: 3px dashed #94a3b8;
+        border-radius: 14px;
+        padding: 6px;
+        background: #f8fafc;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        gap: 3px;
+        position: relative;
+        transition: all 0.35s ease;
+      }
+
+      .tray-box.full-plate {
+        border: 3px solid #1e40af;
+        background: #dbeafe;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.22);
+      }
+
+      .tray-col {
+        display: grid;
+        grid-template-rows: repeat(10, 1fr);
+        gap: 3px;
+        border-radius: 5px;
+        padding: 1px;
+        transition: all 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .tray-col.packed-strip {
+        background: linear-gradient(180deg, #fb923c, #ea580c);
+        gap: 0;
+        box-shadow: 0 2px 6px rgba(234, 88, 12, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.35);
+        transform: scale(1.03);
+      }
+
+      .tray-col.packed-plate {
+        background: linear-gradient(180deg, #3b82f6, #1d4ed8);
+        gap: 0;
+        box-shadow: none;
+        transform: scale(1);
+      }
+
+      .unit-dot {
+        border-radius: 3px;
+        border: 1px dashed #cbd5e1;
+        background: transparent;
+        transition: all 0.3s ease;
+      }
+
+      .unit-dot.on {
+        background: #fde047;
+        border: 1.5px solid #ca8a04;
+        box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+      }
+
+      .tray-col.packed-strip .unit-dot.on {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .tray-col.packed-plate .unit-dot.on {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: none;
+        border-radius: 0;
+      }
+
+      .tray-tag {
+        position: absolute;
+        bottom: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: #0f172a;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 2px 10px;
+        border-radius: 999px;
+        white-space: nowrap;
+      }
+
+      .tray-box.full-plate .tray-tag {
+        background: #1e40af;
+      }
+
+      /* 右側：步驟＋定位板＋荒謬對照 */
+      .side-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 14px 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: var(--shadow);
+        min-height: 0;
+      }
+
+      .step-buttons {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .step-btn {
+        border: 2px solid var(--border);
+        background: var(--surface-soft);
+        border-radius: 14px;
+        padding: 10px 6px;
+        font-size: 14px;
+        font-weight: 900;
+        color: #1e293b;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.15s ease;
+      }
+
+      .step-btn:active {
+        transform: scale(0.96);
+      }
+
+      .step-btn.on {
+        background: #1e40af;
+        border-color: #1e3a8a;
+        color: #fff;
+      }
+
+      .pv-mini {
+        display: grid;
+        grid-template-columns: 1fr 16px 1fr 1fr;
+        gap: 6px;
+        align-items: stretch;
+        background: #f8fafc;
+        border: 2px solid var(--border);
+        border-radius: 16px;
+        padding: 10px;
+      }
+
+      .pv-col {
+        border-radius: 12px;
+        border: 2px solid #cbd5e1;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+      }
+
+      .pv-head {
+        width: 100%;
+        text-align: center;
+        padding: 4px;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .pv-head.one {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .pv-head.tenth {
+        background: #ffedd5;
+        color: #c2410c;
+      }
+
+      .pv-head.hundredth {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+
+      .pv-digit {
+        font-size: 42px;
+        font-weight: 900;
+        padding: 8px 0;
+        line-height: 1;
+      }
+
+      .pv-dot {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        font-size: 46px;
+        font-weight: 900;
+        padding-bottom: 6px;
+      }
+
+      .absurd-box {
+        border: 2px solid #fca5a5;
+        background: #fef2f2;
+        border-radius: 16px;
+        padding: 10px 12px;
+        display: none;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .absurd-box.show {
+        display: flex;
+        animation: popIn 0.25s ease;
+      }
+
+      @keyframes popIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
+      }
+
+      .absurd-plates {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .mini-plate {
+        width: 34px;
+        height: 34px;
+        border-radius: 5px;
+        background: #2563eb;
+        border: 2px solid #1e3a8a;
+        display: grid;
+        place-items: center;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .mini-strip {
+        width: 8px;
+        height: 34px;
+        border-radius: 3px;
+        background: #f97316;
+        border: 1px solid #c2410c;
+      }
+
+      /* ===================== 分頁 3：定位板對尾法 ===================== */
+      .tail-stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        gap: 12px;
+      }
+
+      .tail-controls {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 12px;
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 18px;
+        padding: 10px 16px;
+        box-shadow: var(--shadow);
+      }
+
+      .num-picker {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .num-input-big {
+        width: 100px;
+        height: 44px;
+        border: 2px solid var(--primary);
+        border-radius: 12px;
+        text-align: center;
+        font-size: 24px;
+        font-weight: 900;
+        color: #1e3a8a;
+        background: #eff6ff;
+        outline: none;
+        -webkit-user-select: text;
+        user-select: text;
+      }
+
+      .tail-workspace {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 14px;
+        min-height: 0;
+      }
+
+      .align-board-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .pv-5col {
+        display: grid;
+        grid-template-columns: 1fr 1fr 22px 1fr 1fr;
+        gap: 8px;
+        align-items: stretch;
+        flex: 1;
+      }
+
+      .pv5-cell {
+        border: 2px solid #cbd5e1;
+        border-radius: 16px;
+        background: #f8fafc;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        overflow: hidden;
+        transition: all 0.25s ease;
+        position: relative;
+      }
+
+      .pv5-cell.target-home {
+        border-color: #dc2626;
+        box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.2);
+        background: #fff;
+      }
+
+      .pv5-head {
+        width: 100%;
+        padding: 8px 4px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 900;
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      .pv5-cell[data-col="1"] .pv5-head {
+        background: #dbeafe;
+        color: #1e40af;
+      }
+
+      .pv5-cell[data-col="2"] .pv5-head {
+        background: #ffedd5;
+        color: #c2410c;
+      }
+
+      .pv5-cell[data-col="3"] .pv5-head {
+        background: #fef9c3;
+        color: #854d0e;
+      }
+
+      .target-badge {
+        margin-top: 6px;
+        font-size: 12px;
+        font-weight: 900;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #dc2626;
+        color: #fff;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 0.15s ease;
+      }
+
+      .pv5-cell.target-home .target-badge {
+        opacity: 1;
+        visibility: visible;
+      }
+
+      .pv5-digit-slot {
+        flex: 1;
+        display: grid;
+        place-items: center;
+        font-size: 62px;
+        font-weight: 900;
+        width: 100%;
+      }
+
+      .digit-card {
+        display: grid;
+        place-items: center;
+        min-width: 68px;
+        width: auto;
+        padding: 0 12px;
+        height: 82px;
+        border-radius: 16px;
+        background: #ffffff;
+        border: 3px solid #1e40af;
+        color: #0f172a;
+        box-shadow: 0 4px 12px rgba(30, 64, 175, 0.18);
+        animation: slideCard 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+      }
+
+      .digit-card.tail-digit {
+        border-color: #dc2626;
+        background: #fef2f2;
+        color: #b91c1c;
+      }
+
+      .digit-card.ghost-zero {
+        border-style: dashed;
+        border-color: #94a3b8;
+        color: #94a3b8;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      @keyframes slideCard {
+        from {
+          transform: translateY(-10px) scale(0.9);
+          opacity: 0.4;
+        }
+        to {
+          transform: translateY(0) scale(1);
+          opacity: 1;
+        }
+      }
+
+      .shift-bar {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+
+      .shift-btn {
+        border: 2px solid var(--primary);
+        background: #eff6ff;
+        color: #1e40af;
+        font-size: 16px;
+        font-weight: 900;
+        padding: 8px 18px;
+        border-radius: 14px;
+        cursor: pointer;
+      }
+
+      .shift-btn:active {
+        transform: scale(0.95);
+      }
+
+      .shift-btn:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+      }
+
+      .preview-blocks-card {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 10px;
+        box-shadow: var(--shadow);
+        min-height: 0;
+      }
+
+      .blocks-visual {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: 14px;
+        overflow-y: auto;
+      }
+
+      .block-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        padding: 8px 12px;
+        border-radius: 14px;
+        background: #f8fafc;
+        border: 1.5px solid #e2e8f0;
+      }
+
+      .row-lbl {
+        min-width: 72px;
+        font-size: 14px;
+        font-weight: 900;
+        color: #475569;
+      }
+
+      .blk-10 {
+        width: 58px;
+        height: 44px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 15px;
+      }
+
+      .blk-1 {
+        width: 44px;
+        height: 44px;
+        border-radius: 6px;
+        background: #2563eb;
+        border: 2px solid #1e40af;
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 900;
+        font-size: 13px;
+      }
+
+      .blk-01 {
+        width: 11px;
+        height: 44px;
+        border-radius: 3px;
+        background: #f97316;
+        border: 1.5px solid #c2410c;
+      }
+
+      .blk-001 {
+        width: 11px;
+        height: 11px;
+        border-radius: 2px;
+        background: #fde047;
+        border: 1.5px solid #ca8a04;
+      }
+
+      /* ===================== 分頁 4：雙胞胎快篩 ===================== */
+      .quiz-stage {
+        flex: 1;
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 1fr 1.15fr;
+        gap: 14px;
+      }
+
+      .quiz-left {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .q-prompt {
+        font-size: 28px;
+        font-weight: 900;
+        line-height: 1.35;
+        color: #0f172a;
+      }
+
+      .q-prompt .hl {
+        color: #1d4ed8;
+        background: #dbeafe;
+        padding: 2px 8px;
+        border-radius: 8px;
+      }
+
+      .q-visual-mini {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        background: #f8fafc;
+        border-radius: 16px;
+        border: 2px dashed #cbd5e1;
+      }
+
+      .choices-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .choice-btn {
+        border: 3px solid var(--border);
+        background: #f8fafc;
+        border-radius: 18px;
+        padding: 14px 10px;
+        font-size: 26px;
+        font-weight: 900;
+        color: #1e293b;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .choice-btn:active {
+        transform: scale(0.96);
+      }
+
+      .choice-btn.picked {
+        border-color: #1d4ed8;
+        background: #dbeafe;
+        color: #1e3a8a;
+      }
+
+      .choice-btn.correct {
+        border-color: #16a34a;
+        background: #dcfce7;
+        color: #15803d;
+      }
+
+      .choice-btn.wrong {
+        border-color: #dc2626;
+        background: #fee2e2;
+        color: #b91c1c;
+        text-decoration: line-through;
+      }
+
+      .quiz-right {
+        background: var(--surface);
+        border: 2px solid var(--border);
+        border-radius: 22px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 12px;
+        box-shadow: var(--shadow);
+      }
+
+      .proof-canvas {
+        flex: 1;
+        min-height: 0;
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 14px;
+      }
+
+      .proof-compare {
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .proof-box {
+        border-radius: 14px;
+        padding: 12px;
+        border: 2px solid;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .proof-box.ok {
+        background: #f0fdf4;
+        border-color: #4ade80;
+      }
+
+      .proof-box.bad {
+        background: #fef2f2;
+        border-color: #f87171;
+      }
+
+      .catchphrase {
+        width: 100%;
+        text-align: center;
+        font-size: 20px;
+        font-weight: 900;
+        padding: 10px;
+        border-radius: 14px;
+        background: #eff6ff;
+        color: #1e40af;
+        border: 2px solid #93c5fd;
+      }
+
+      /* 尺條對照 */
+      .ruler-bar {
+        width: 100%;
+        height: 36px;
+        background: #fef9c3;
+        border: 2px solid #ca8a04;
+        border-radius: 6px;
+        position: relative;
+        overflow: hidden;
+        display: flex;
+      }
+
+      .ruler-seg {
+        flex: 1;
+        border-right: 1px solid rgba(161, 98, 7, 0.35);
+      }
+
+      .ruler-fill {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        background: rgba(37, 99, 235, 0.35);
+        border-right: 3px solid #1e40af;
+      }
+
+      .ruler-mid-line {
+        position: absolute;
+        left: 50%;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        background: #0f172a;
+        z-index: 2;
+      }
+
+      @media (max-width: 900px) {
+        html,
+        body {
+          position: static;
+          overflow: auto;
+          height: auto;
+        }
+        #app {
+          position: static;
+          height: auto;
+          min-height: 100vh;
+        }
+        .compare-stage,
+        .pack-stage,
+        .tail-workspace,
+        .quiz-stage {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <header>
+        <div class="brand">🎯 小數迷思破除白板</div>
+        <div class="tabs">
+          <button class="tab-btn active" data-tab="t1">1. 7顆 vs 7條</button>
+          <button class="tab-btn" data-tab="t2">2. 63顆大變身</button>
+          <button class="tab-btn" data-tab="t3">3. 定位板對尾</button>
+          <button class="tab-btn" data-tab="t4">4. 雙胞胎快篩</button>
+        </div>
+        <div class="hdr-actions">
+          <button class="icon-btn" id="btn-blind">👁 蓋住答案</button>
+          <button class="icon-btn" id="btn-reset">↺ 重置</button>
+        </div>
+      </header>
+
+      <main>
+        <!-- ==================== TAB 1：7 顆 vs 7 條 ==================== -->
+        <section class="panel active" id="panel-t1">
+          <div class="toolbar">
+            <div class="btn-group">
+              <button class="pill on" data-t1-preset="7-70">0.07 vs 0.7</button>
+              <button class="pill" data-t1-preset="4-40">0.04 vs 0.4</button>
+              <button class="pill" data-t1-preset="10-10">0.10 = 0.1</button>
+              <button class="pill" data-t1-preset="0-0">清空自畫</button>
+            </div>
+            <div class="btn-group">
+              <button class="pill orange on" id="btn-strip-lines">📏 顯示「10 格一條」框線</button>
+              <button class="pill" id="btn-tail-zero">👀 顯示末尾 0</button>
+            </div>
+          </div>
+
+          <div class="compare-stage">
+            <!-- 左板 -->
+            <div class="board-card">
+              <div class="board-top">
+                <div class="board-title">
+                  <span style="color: #ca8a04">■</span> 左板（點擊或拖曳塗色）
+                </div>
+                <div class="brush-toggle" data-side="left">
+                  <button class="brush-btn on" data-mode="cell">塗 1 顆</button>
+                  <button class="brush-btn" data-mode="strip">塗 1 條</button>
+                </div>
+              </div>
+
+              <div class="grid-wrap">
+                <div class="hundred-grid" id="grid-left"></div>
+                <div class="tenth-overlay show" id="overlay-left"></div>
+              </div>
+
+              <div class="readout-box">
+                <div class="breakdown-tags" id="tags-left"></div>
+                <div class="big-decimal num-font answer-target" id="dec-left">0.07</div>
+              </div>
+            </div>
+
+            <!-- 中間對比動作 -->
+            <div class="vs-col">
+              <div class="vs-circle num-font" id="vs-symbol">&lt;</div>
+              <button class="action-fab" id="btn-overlay-compare">⚡<br />重疊<br />比比看</button>
+              <div class="ratio-pill" id="ratio-pill">差 10 倍！</div>
+            </div>
+
+            <!-- 右板 -->
+            <div class="board-card">
+              <div class="board-top">
+                <div class="board-title">
+                  <span style="color: #ea580c">■</span> 右板（點擊或拖曳塗色）
+                </div>
+                <div class="brush-toggle" data-side="right">
+                  <button class="brush-btn" data-mode="cell">塗 1 顆</button>
+                  <button class="brush-btn on" data-mode="strip">塗 1 條</button>
+                </div>
+              </div>
+
+              <div class="grid-wrap">
+                <div class="hundred-grid" id="grid-right"></div>
+                <div class="tenth-overlay show" id="overlay-right"></div>
+              </div>
+
+              <div class="readout-box">
+                <div class="breakdown-tags" id="tags-right"></div>
+                <div class="big-decimal num-font answer-target" id="dec-right">0.7</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 2：63 顆大變身 ==================== -->
+        <section class="panel" id="panel-t2">
+          <div class="toolbar">
+            <div class="btn-group">
+              <button class="pill on" data-t2-val="63">63 個 0.01</button>
+              <button class="pill" data-t2-val="32">32 個 0.01</button>
+              <button class="pill" data-t2-val="14">14 個 0.01</button>
+              <button class="pill" data-t2-val="107">107 個 0.01</button>
+              <button class="pill" data-t2-val="9">9 個 0.01</button>
+            </div>
+            <div class="btn-group">
+              <button class="pill" id="t2-minus10">-10</button>
+              <button class="pill" id="t2-minus1">-1</button>
+              <span class="badge" style="background: #eff6ff; color: #1e3a8a; font-size: 16px">
+                <span class="num-font" id="t2-count-lbl">63</span> 個 0.01
+              </span>
+              <button class="pill" id="t2-plus1">+1</button>
+              <button class="pill" id="t2-plus10">+10</button>
+            </div>
+          </div>
+
+          <div class="pack-stage">
+            <!-- 左側百格托盤動畫區 -->
+            <div class="tray-card">
+              <div class="meter-row">
+                <span style="font-size: 15px; font-weight: 900; color: #334155">滿 100 進 1 張</span>
+                <div class="meter-bar">
+                  <div class="meter-fill" id="t2-meter-fill" style="width: 63%"></div>
+                </div>
+                <div class="brake-stamp warn" id="t2-brake">未滿 100 → 個位只能是 0</div>
+              </div>
+
+              <div class="trays-container" id="t2-trays"></div>
+            </div>
+
+            <!-- 右側三步驟控制 & 定位板 -->
+            <div class="side-card">
+              <div class="step-buttons">
+                <button class="step-btn on" id="t2-step-scatter">① 散裝顆</button>
+                <button class="step-btn" id="t2-step-pack">② 10 顆綁 1 條</button>
+                <button class="step-btn" id="t2-step-pv">③ 住進定位板</button>
+              </div>
+
+              <div class="pv-mini">
+                <div class="pv-col">
+                  <div class="pv-head one">個位 (張)</div>
+                  <div class="pv-digit num-font answer-target" id="t2-pv-1">0</div>
+                </div>
+                <div class="pv-dot">.</div>
+                <div class="pv-col">
+                  <div class="pv-head tenth">十分位 (條)</div>
+                  <div class="pv-digit num-font answer-target" id="t2-pv-01">6</div>
+                </div>
+                <div class="pv-col">
+                  <div class="pv-head hundredth">百分位 (顆)</div>
+                  <div class="pv-digit num-font answer-target" id="t2-pv-001">3</div>
+                </div>
+              </div>
+
+              <button class="pill danger" id="btn-absurd" style="width: 100%; padding: 10px; font-size: 16px">
+                ⚠️ 如果誤寫成 <span class="num-font" id="absurd-guess-lbl">6.3</span> 會怎樣？點我看真相！
+              </button>
+
+              <div class="absurd-box" id="absurd-box">
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                  <strong style="color: #b91c1c; font-size: 16px" id="absurd-title">6.3 ＝ 6 大張 ＋ 3 條（630 顆！）</strong>
+                  <span style="font-size: 13px; font-weight: 800; color: #991b1b">根本差 10 倍！</span>
+                </div>
+                <div class="absurd-plates" id="absurd-plates"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 3：定位板對尾法 ==================== -->
+        <section class="panel" id="panel-t3">
+          <div class="tail-stage">
+            <div class="tail-controls">
+              <div class="num-picker">
+                <span style="font-size: 16px; font-weight: 900">數字：</span>
+                <input class="num-input-big num-font" id="t3-num-input" type="number" min="1" max="999" value="63" />
+                <button class="pill on" data-t3-num="63">63</button>
+                <button class="pill" data-t3-num="7">7</button>
+                <button class="pill" data-t3-num="107">107</button>
+                <button class="pill" data-t3-num="25">25</button>
+              </div>
+
+              <div class="btn-group">
+                <span style="font-size: 16px; font-weight: 900">單位：</span>
+                <button class="pill" data-t3-unit="1">個 1 (張)</button>
+                <button class="pill orange" data-t3-unit="0.1">個 0.1 (條)</button>
+                <button class="pill ok on" data-t3-unit="0.01">個 0.01 (顆)</button>
+              </div>
+            </div>
+
+            <div class="tail-workspace">
+              <div class="align-board-card">
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                  <span style="font-size: 17px; font-weight: 900; color: #1e3a8a">
+                    🎯 口訣：<span style="color: #dc2626">最後一個字</span> 踩在單位的家！
+                  </span>
+                  <span class="badge answer-target" style="background: #dbeafe; color: #1e40af; font-size: 20px" id="t3-result-eq">
+                    = 0.63
+                  </span>
+                </div>
+
+                <div class="pv-5col" id="t3-pv5">
+                  <div class="pv5-cell" data-col="0">
+                    <div class="pv5-head">十位 (10)</div>
+                    <div class="target-badge">🎯 踩這</div>
+                    <div class="pv5-digit-slot"></div>
+                  </div>
+                  <div class="pv5-cell" data-col="1">
+                    <div class="pv5-head">個位 (張)</div>
+                    <div class="target-badge">🎯 踩這</div>
+                    <div class="pv5-digit-slot"></div>
+                  </div>
+                  <div class="pv-dot" style="align-items: center; padding-top: 44px; padding-bottom: 0">.</div>
+                  <div class="pv5-cell" data-col="2">
+                    <div class="pv5-head">十分位 (條)</div>
+                    <div class="target-badge">🎯 踩這</div>
+                    <div class="pv5-digit-slot"></div>
+                  </div>
+                  <div class="pv5-cell" data-col="3">
+                    <div class="pv5-head">百分位 (顆)</div>
+                    <div class="target-badge">🎯 踩這</div>
+                    <div class="pv5-digit-slot"></div>
+                  </div>
+                </div>
+
+                <div class="shift-bar">
+                  <button class="shift-btn" id="t3-shift-left">◀ 整組左移（×10）</button>
+                  <button class="shift-btn" id="t3-shift-right">整組右移（÷10） ▶</button>
+                </div>
+              </div>
+
+              <div class="preview-blocks-card">
+                <div style="display: flex; justify-content: space-between; align-items: center">
+                  <strong style="font-size: 17px">實物積木長這樣</strong>
+                  <span class="answer-target" style="font-size: 14px; font-weight: 800; color: var(--muted)" id="t3-summary-lbl"></span>
+                </div>
+                <div class="blocks-visual" id="t3-blocks-visual"></div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== TAB 4：雙胞胎快篩 ==================== -->
+        <section class="panel" id="panel-t4">
+          <div class="toolbar">
+            <div class="btn-group" id="t4-q-tabs">
+              <button class="pill on" data-q="0">Q1 百格 7 顆</button>
+              <button class="pill" data-q="1">Q2 63 個 0.01</button>
+              <button class="pill" data-q="2">Q3 63 個 0.1</button>
+              <button class="pill" data-q="3">Q4 107 個 0.01</button>
+              <button class="pill" data-q="4">Q5 1m 9cm</button>
+              <button class="pill" data-q="5">Q6 1.2m</button>
+            </div>
+            <button class="pill orange" id="btn-rand-q">🎲 隨機出雙胞胎</button>
+          </div>
+
+          <div class="quiz-stage">
+            <div class="quiz-left">
+              <div>
+                <div style="font-size: 13px; font-weight: 900; color: var(--muted); margin-bottom: 6px" id="q-tag">
+                  先搶答，再按揭曉看圖解！
+                </div>
+                <div class="q-prompt" id="q-prompt"></div>
+              </div>
+
+              <div class="q-visual-mini" id="q-mini-vis"></div>
+
+              <div class="choices-grid" id="q-choices"></div>
+
+              <button class="action-fab" id="btn-reveal" style="width: 100%; padding: 14px">
+                ⚡ 揭曉答案 ＋ 視覺打臉對比
+              </button>
+            </div>
+
+            <div class="quiz-right">
+              <div style="display: flex; justify-content: space-between; align-items: center">
+                <strong style="font-size: 18px">視覺真相對照區</strong>
+                <span class="badge" id="q-status-badge" style="background: #f1f5f9; color: #64748b">等待揭曉…</span>
+              </div>
+
+              <div class="proof-canvas" id="q-proof">
+                <div style="font-size: 20px; font-weight: 800; color: #94a3b8">選好答案後，按左下方「揭曉」</div>
+              </div>
+
+              <div class="catchphrase" id="q-catchphrase">👀 寫完前先問自己：張・條・顆 對了嗎？</div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      /* ==================== 全域狀態 ==================== */
+      const state = {
+        tab: "t1",
+        blind: false,
+        t1: {
+          left: new Set(),
+          right: new Set(),
+          brush: { left: "cell", right: "strip" },
+          showLines: true,
+          showTailZero: false,
+          overlayCompare: false
+        },
+        t2: {
+          count: 63,
+          step: "scatter", // scatter | pack | pv
+          showAbsurd: false
+        },
+        t3: {
+          num: 63,
+          tailCol: 3 // 0:十位, 1:個位(1), 2:十分位(0.1), 3:百分位(0.01)
+        },
+        t4: {
+          qIndex: 0,
+          picked: null,
+          revealed: false,
+          customQ: null
+        }
+      };
+
+      function initPresetT1(leftCount, rightCount) {
+        state.t1.left.clear();
+        state.t1.right.clear();
+        for (let i = 0; i < leftCount; i++) state.t1.left.add(i);
+        for (let i = 0; i < rightCount; i++) state.t1.right.add(i);
+        state.t1.overlayCompare = false;
+      }
+      initPresetT1(7, 70);
+
+      /* ==================== 頂部切換 & 共用 ==================== */
+      document.querySelectorAll(".tab-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.tab = btn.dataset.tab;
+          document.querySelectorAll(".tab-btn").forEach((b) => b.classList.toggle("active", b === btn));
+          document.querySelectorAll(".panel").forEach((p) => p.classList.toggle("active", p.id === `panel-${state.tab}`));
+        });
+      });
+
+      const blindBtn = document.getElementById("btn-blind");
+      blindBtn.addEventListener("click", () => {
+        state.blind = !state.blind;
+        blindBtn.classList.toggle("blind-on", state.blind);
+        blindBtn.textContent = state.blind ? "👀 顯示答案" : "👁 蓋住答案";
+        applyBlind();
+      });
+
+      function applyBlind() {
+        document.querySelectorAll(".answer-target").forEach((el) => {
+          el.classList.toggle("masked", state.blind);
+        });
+      }
+
+      document.getElementById("btn-reset").addEventListener("click", () => {
+        if (state.tab === "t1") {
+          initPresetT1(7, 70);
+          document.querySelectorAll("[data-t1-preset]").forEach((b) => {
+            b.classList.toggle("on", b.dataset.t1Preset === "7-70");
+          });
+          renderT1();
+        } else if (state.tab === "t2") {
+          state.t2.count = 63;
+          state.t2.step = "scatter";
+          state.t2.showAbsurd = false;
+          renderT2();
+        } else if (state.tab === "t3") {
+          state.t3.num = 63;
+          state.t3.tailCol = 3;
+          document.getElementById("t3-num-input").value = 63;
+          renderT3();
+        } else if (state.tab === "t4") {
+          state.t4.picked = null;
+          state.t4.revealed = false;
+          renderT4();
+        }
+      });
+
+      /* ==================== TAB 1：百格對比 ==================== */
+      // 注意：格子的索引採「直排優先」col*10 + row，這樣一整條（0.1）就是連續 10 格！
+      function buildGridDOM(gridEl, overlayEl, side) {
+        gridEl.innerHTML = "";
+        overlayEl.innerHTML = "";
+        // CSS grid 是橫排先填，所以 cell (r, c) 索引為 c*10 + r
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const idx = c * 10 + r;
+            const cell = document.createElement("div");
+            cell.className = "cell";
+            cell.dataset.idx = idx;
+            cell.dataset.col = c;
+            gridEl.appendChild(cell);
+          }
+        }
+        for (let c = 0; c < 10; c++) {
+          const colDiv = document.createElement("div");
+          colDiv.className = "tenth-col";
+          colDiv.dataset.col = c;
+          overlayEl.appendChild(colDiv);
+        }
+
+        let painting = false;
+        let paintAction = true;
+
+        function applyPaint(target) {
+          if (!target || !target.classList.contains("cell")) return;
+          const set = state.t1[side];
+          const mode = state.t1.brush[side];
+          if (mode === "strip") {
+            const col = Number(target.dataset.col);
+            for (let r = 0; r < 10; r++) {
+              const id = col * 10 + r;
+              if (paintAction) set.add(id);
+              else set.delete(id);
+            }
+          } else {
+            const id = Number(target.dataset.idx);
+            if (paintAction) set.add(id);
+            else set.delete(id);
+          }
+          state.t1.overlayCompare = false;
+          renderT1();
+        }
+
+        gridEl.addEventListener("pointerdown", (e) => {
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          if (!target || !target.classList.contains("cell")) return;
+          gridEl.setPointerCapture(e.pointerId);
+          painting = true;
+          const set = state.t1[side];
+          const mode = state.t1.brush[side];
+          if (mode === "strip") {
+            const col = Number(target.dataset.col);
+            let filledInCol = 0;
+            for (let r = 0; r < 10; r++) if (set.has(col * 10 + r)) filledInCol++;
+            paintAction = filledInCol < 10;
+          } else {
+            paintAction = !set.has(Number(target.dataset.idx));
+          }
+          applyPaint(target);
+        });
+
+        gridEl.addEventListener("pointermove", (e) => {
+          if (!painting) return;
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          applyPaint(target);
+        });
+
+        gridEl.addEventListener("pointerup", () => {
+          painting = false;
+        });
+        gridEl.addEventListener("pointercancel", () => {
+          painting = false;
+        });
+      }
+
+      buildGridDOM(document.getElementById("grid-left"), document.getElementById("overlay-left"), "left");
+      buildGridDOM(document.getElementById("grid-right"), document.getElementById("overlay-right"), "right");
+
+      document.querySelectorAll("[data-t1-preset]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          document.querySelectorAll("[data-t1-preset]").forEach((b) => b.classList.remove("on"));
+          btn.classList.add("on");
+          const [l, r] = btn.dataset.t1Preset.split("-").map(Number);
+          if (btn.dataset.t1Preset === "10-10") {
+            state.t1.showTailZero = true;
+            document.getElementById("btn-tail-zero").classList.add("on");
+          }
+          initPresetT1(l, r);
+          renderT1();
+        });
+      });
+
+      document.querySelectorAll(".brush-toggle").forEach((grp) => {
+        const side = grp.dataset.side;
+        grp.querySelectorAll(".brush-btn").forEach((b) => {
+          b.addEventListener("click", () => {
+            state.t1.brush[side] = b.dataset.mode;
+            grp.querySelectorAll(".brush-btn").forEach((x) => x.classList.toggle("on", x === b));
+          });
+        });
+      });
+
+      document.getElementById("btn-strip-lines").addEventListener("click", (e) => {
+        state.t1.showLines = !state.t1.showLines;
+        e.currentTarget.classList.toggle("on", state.t1.showLines);
+        renderT1();
+      });
+
+      document.getElementById("btn-tail-zero").addEventListener("click", (e) => {
+        state.t1.showTailZero = !state.t1.showTailZero;
+        e.currentTarget.classList.toggle("on", state.t1.showTailZero);
+        renderT1();
+      });
+
+      document.getElementById("btn-overlay-compare").addEventListener("click", () => {
+        state.t1.overlayCompare = !state.t1.overlayCompare;
+        renderT1();
+      });
+
+      function renderSideT1(side) {
+        const set = state.t1[side];
+        const count = set.size;
+        const gridEl = document.getElementById(`grid-${side}`);
+        const overlayEl = document.getElementById(`overlay-${side}`);
+        const fillClass = side === "left" ? "filled-left" : "filled-right";
+
+        gridEl.classList.toggle("dim-for-compare", side === "right" && state.t1.overlayCompare && state.t1.left.size > 0);
+        gridEl.querySelectorAll(".cell").forEach((cell) => {
+          const idx = Number(cell.dataset.idx);
+          const isFilled = set.has(idx);
+          cell.classList.toggle(fillClass, isFilled);
+          const showGhost =
+            side === "right" && state.t1.overlayCompare && idx < state.t1.left.size && state.t1.left.size > 0;
+          cell.classList.toggle("ghost-overlay", showGhost);
+        });
+
+        overlayEl.classList.toggle("show", state.t1.showLines);
+        overlayEl.querySelectorAll(".tenth-col").forEach((colEl) => {
+          const c = Number(colEl.dataset.col);
+          let full = true;
+          for (let r = 0; r < 10; r++) {
+            if (!set.has(c * 10 + r)) {
+              full = false;
+              break;
+            }
+          }
+          colEl.classList.toggle("full-strip", full);
+        });
+
+        const ones = Math.floor(count / 100);
+        const tenths = Math.floor((count % 100) / 10);
+        const hundredths = count % 10;
+
+        const tagsEl = document.getElementById(`tags-${side}`);
+        const guardWarn = tenths === 0 && hundredths > 0;
+        tagsEl.innerHTML = `
+          <div class="tag-unit strip ${guardWarn ? "zero-guard" : ""}">
+            <span class="tag-val num-font">${tenths}</span>
+            <span class="tag-lbl">${guardWarn ? "0 條顧門!" : "整條(0.1)"}</span>
+          </div>
+          <div class="tag-unit dot">
+            <span class="tag-val num-font">${hundredths}</span>
+            <span class="tag-lbl">散顆(0.01)</span>
+          </div>
+          <div style="font-size:13px;font-weight:800;color:#64748b;margin-left:4px">(${count} 格)</div>
+        `;
+
+        const decEl = document.getElementById(`dec-${side}`);
+        if (ones === 1) {
+          decEl.innerHTML = `1<span class="z-tail ${state.t1.showTailZero ? "" : "hidden-tail"}">.00</span>`;
+        } else {
+          const tenthHtml = guardWarn ? `<span class="z-guard">0</span>` : `${tenths}`;
+          const tailHtml =
+            hundredths === 0 && tenths > 0
+              ? `<span class="z-tail ${state.t1.showTailZero ? "" : "hidden-tail"}">0</span>`
+              : `${hundredths}`;
+          decEl.innerHTML = `0.${tenthHtml}${tailHtml}`;
+        }
+      }
+
+      function renderT1() {
+        renderSideT1("left");
+        renderSideT1("right");
+        const l = state.t1.left.size;
+        const r = state.t1.right.size;
+        document.getElementById("vs-symbol").textContent = l < r ? "<" : l > r ? ">" : "=";
+
+        const ratioPill = document.getElementById("ratio-pill");
+        if (state.t1.overlayCompare && l > 0 && r > 0) {
+          if (r === l * 10) ratioPill.textContent = "面積差 10 倍！";
+          else if (l === r * 10) ratioPill.textContent = "面積差 10 倍！";
+          else if (l === r) ratioPill.textContent = "面積一樣大！";
+          else ratioPill.textContent = `${l} 格 vs ${r} 格`;
+          ratioPill.classList.add("show");
+        } else {
+          ratioPill.classList.remove("show");
+        }
+        applyBlind();
+      }
+
+      /* ==================== TAB 2：63 顆大變身 ==================== */
+      document.querySelectorAll("[data-t2-val]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.t2.count = Number(btn.dataset.t2Val);
+          state.t2.step = "scatter";
+          state.t2.showAbsurd = false;
+          renderT2();
+        });
+      });
+
+      function adjT2(delta) {
+        state.t2.count = Math.max(1, Math.min(250, state.t2.count + delta));
+        state.t2.showAbsurd = false;
+        renderT2();
+      }
+      document.getElementById("t2-minus10").addEventListener("click", () => adjT2(-10));
+      document.getElementById("t2-minus1").addEventListener("click", () => adjT2(-1));
+      document.getElementById("t2-plus1").addEventListener("click", () => adjT2(1));
+      document.getElementById("t2-plus10").addEventListener("click", () => adjT2(10));
+
+      document.getElementById("t2-step-scatter").addEventListener("click", () => {
+        state.t2.step = "scatter";
+        renderT2();
+      });
+      document.getElementById("t2-step-pack").addEventListener("click", () => {
+        state.t2.step = "pack";
+        renderT2();
+      });
+      document.getElementById("t2-step-pv").addEventListener("click", () => {
+        state.t2.step = "pv";
+        renderT2();
+      });
+
+      document.getElementById("btn-absurd").addEventListener("click", () => {
+        state.t2.showAbsurd = !state.t2.showAbsurd;
+        renderT2();
+      });
+
+      function renderT2() {
+        const n = state.t2.count;
+        document.getElementById("t2-count-lbl").textContent = n;
+        document.querySelectorAll("[data-t2-val]").forEach((b) => {
+          b.classList.toggle("on", Number(b.dataset.t2Val) === n);
+        });
+
+        // 步驟按鈕高亮
+        document.getElementById("t2-step-scatter").classList.toggle("on", state.t2.step === "scatter");
+        document.getElementById("t2-step-pack").classList.toggle("on", state.t2.step === "pack");
+        document.getElementById("t2-step-pv").classList.toggle("on", state.t2.step === "pv");
+
+        // 滿百能量條
+        const fillPct = Math.min(100, n);
+        const meterFill = document.getElementById("t2-meter-fill");
+        meterFill.style.width = `${fillPct}%`;
+        meterFill.classList.toggle("full", n >= 100);
+
+        const brake = document.getElementById("t2-brake");
+        const ones = Math.floor(n / 100);
+        const tenths = Math.floor((n % 100) / 10);
+        const hundredths = n % 10;
+
+        if (n < 100) {
+          brake.className = "brake-stamp warn";
+          brake.textContent = `才 ${n} / 100 → 未滿 1 張，個位只能是 0！`;
+        } else {
+          brake.className = "brake-stamp pass";
+          brake.textContent = `滿百進位！可換 ${ones} 大張`;
+        }
+
+        // 繪製百格托盤
+        const traysEl = document.getElementById("t2-trays");
+        traysEl.innerHTML = "";
+        const numTrays = Math.max(1, Math.ceil(n / 100));
+        const packed = state.t2.step !== "scatter";
+
+        for (let t = 0; t < numTrays; t++) {
+          const box = document.createElement("div");
+          const trayCount = Math.max(0, Math.min(100, n - t * 100));
+          const isFullPlate = trayCount === 100 && packed;
+          box.className = `tray-box ${isFullPlate ? "full-plate" : ""}`;
+
+          for (let c = 0; c < 10; c++) {
+            const col = document.createElement("div");
+            const colFilled = Math.max(0, Math.min(10, trayCount - c * 10));
+            let colClass = "tray-col";
+            if (isFullPlate) colClass += " packed-plate";
+            else if (packed && colFilled === 10) colClass += " packed-strip";
+            col.className = colClass;
+
+            for (let r = 0; r < 10; r++) {
+              const dot = document.createElement("div");
+              dot.className = `unit-dot ${r < colFilled ? "on" : ""}`;
+              col.appendChild(dot);
+            }
+            box.appendChild(col);
+          }
+
+          const tag = document.createElement("div");
+          tag.className = "tray-tag";
+          if (isFullPlate) {
+            tag.textContent = `1 大張（100 顆）`;
+          } else {
+            const tStrips = Math.floor(trayCount / 10);
+            const tDots = trayCount % 10;
+            tag.textContent = packed ? `${tStrips} 條 ＋ ${tDots} 顆` : `${trayCount} 顆（空 ${100 - trayCount} 格）`;
+          }
+          box.appendChild(tag);
+          traysEl.appendChild(box);
+        }
+
+        // 定位板數字
+        const pv1 = document.getElementById("t2-pv-1");
+        const pv01 = document.getElementById("t2-pv-01");
+        const pv001 = document.getElementById("t2-pv-001");
+        pv1.textContent = state.t2.step === "pv" ? ones : "?";
+        pv01.textContent = state.t2.step === "pv" ? tenths : "?";
+        pv001.textContent = state.t2.step === "pv" ? hundredths : "?";
+
+        // 荒謬對照（常見錯答：n<100 時點中間變 a.b；n>=100 變成 a.bc 或 0.abc）
+        const absurdBtn = document.getElementById("btn-absurd");
+        const absurdBox = document.getElementById("absurd-box");
+        const guessLabel = document.getElementById("absurd-guess-lbl");
+        const absurdTitle = document.getElementById("absurd-title");
+        const absurdPlates = document.getElementById("absurd-plates");
+
+        if (n >= 10 && n < 100) {
+          absurdBtn.style.display = "block";
+          const fakeWhole = Math.floor(n / 10);
+          const fakeDec = n % 10;
+          guessLabel.textContent = `${fakeWhole}.${fakeDec}`;
+          absurdBox.classList.toggle("show", state.t2.showAbsurd);
+          absurdTitle.textContent = `${fakeWhole}.${fakeDec} ＝ ${fakeWhole} 大張 ＋ ${fakeDec} 條（${n * 10} 顆！）`;
+          absurdPlates.innerHTML = "";
+          for (let i = 0; i < fakeWhole; i++) {
+            const p = document.createElement("div");
+            p.className = "mini-plate";
+            p.textContent = "1張";
+            absurdPlates.appendChild(p);
+          }
+          for (let i = 0; i < fakeDec; i++) {
+            const s = document.createElement("div");
+            s.className = "mini-strip";
+            absurdPlates.appendChild(s);
+          }
+        } else if (n >= 100 && n % 100 > 0 && n % 100 < 10) {
+          absurdBtn.style.display = "block";
+          const fakeWhole = Math.floor(n / 100);
+          const fakeDec = n % 100;
+          guessLabel.textContent = `${fakeWhole}.${fakeDec}`;
+          absurdBox.classList.toggle("show", state.t2.showAbsurd);
+          absurdTitle.textContent = `${fakeWhole}.${fakeDec} ＝ ${fakeWhole} 大張 ＋ ${fakeDec} 條（${fakeWhole * 100 + fakeDec * 10} 顆！）`;
+          absurdPlates.innerHTML = "";
+          for (let i = 0; i < fakeWhole; i++) {
+            const p = document.createElement("div");
+            p.className = "mini-plate";
+            p.textContent = "1張";
+            absurdPlates.appendChild(p);
+          }
+          for (let i = 0; i < fakeDec; i++) {
+            const s = document.createElement("div");
+            s.className = "mini-strip";
+            absurdPlates.appendChild(s);
+          }
+        } else {
+          absurdBtn.style.display = "none";
+          absurdBox.classList.remove("show");
+        }
+        applyBlind();
+      }
+
+      /* ==================== TAB 3：定位板對尾法 ==================== */
+      const t3Input = document.getElementById("t3-num-input");
+      t3Input.addEventListener("input", () => {
+        let v = parseInt(t3Input.value, 10);
+        if (isNaN(v) || v < 1) v = 1;
+        if (v > 999) v = 999;
+        state.t3.num = v;
+        renderT3();
+      });
+
+      document.querySelectorAll("[data-t3-num]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.t3.num = Number(btn.dataset.t3Num);
+          t3Input.value = state.t3.num;
+          renderT3();
+        });
+      });
+
+      const unitToCol = { "1": 1, "0.1": 2, "0.01": 3 };
+      document.querySelectorAll("[data-t3-unit]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.t3.tailCol = unitToCol[btn.dataset.t3Unit];
+          renderT3();
+        });
+      });
+
+      document.getElementById("t3-shift-left").addEventListener("click", () => {
+        if (state.t3.tailCol > 0) {
+          state.t3.tailCol--;
+          renderT3();
+        }
+      });
+      document.getElementById("t3-shift-right").addEventListener("click", () => {
+        if (state.t3.tailCol < 3) {
+          state.t3.tailCol++;
+          renderT3();
+        }
+      });
+
+      function renderT3() {
+        const num = state.t3.num;
+        const tailCol = state.t3.tailCol;
+        const str = String(num);
+        const len = str.length;
+
+        document.querySelectorAll("[data-t3-num]").forEach((b) => {
+          b.classList.toggle("on", Number(b.dataset.t3Num) === num);
+        });
+        document.querySelectorAll("[data-t3-unit]").forEach((b) => {
+          b.classList.toggle("on", unitToCol[b.dataset.t3Unit] === tailCol);
+        });
+
+        // 計算對應小數值：將數字放到對齊欄，若超出左邊十位也允許顯示百位數字在十位欄或提示
+        // cols: 0(十位), 1(個位), 2(十分位), 3(百分位)
+        const digitsByCol = { 0: "", 1: "", 2: "", 3: "" };
+        for (let i = 0; i < len; i++) {
+          const ch = str[len - 1 - i];
+          const col = tailCol - i;
+          if (col >= 0 && col <= 3) {
+            digitsByCol[col] = digitsByCol[col] ? ch + digitsByCol[col] : ch;
+          } else if (col < 0) {
+            // 若超出最左欄，合併顯示在 col 0
+            digitsByCol[0] = ch + digitsByCol[0];
+          }
+        }
+
+        const cells = document.querySelectorAll("#t3-pv5 .pv5-cell");
+        cells.forEach((cell) => {
+          const col = Number(cell.dataset.col);
+          cell.classList.toggle("target-home", col === tailCol);
+          const slot = cell.querySelector(".pv5-digit-slot");
+          slot.innerHTML = "";
+          const val = digitsByCol[col];
+          if (val !== "") {
+            const card = document.createElement("div");
+            card.className = `digit-card num-font ${col === tailCol ? "tail-digit" : ""}`;
+            card.textContent = val;
+            slot.appendChild(card);
+          } else if (col === 1 && tailCol >= 2) {
+            const gz = document.createElement("div");
+            gz.className = "digit-card ghost-zero num-font";
+            gz.textContent = "0";
+            slot.appendChild(gz);
+          } else if (col === 2 && tailCol === 3 && num < 10) {
+            const gz = document.createElement("div");
+            gz.className = "digit-card ghost-zero num-font";
+            gz.textContent = "0";
+            slot.appendChild(gz);
+          }
+        });
+
+        // 精準小數值（避免浮點數誤差）
+        const factor = tailCol === 0 ? 10 : tailCol === 1 ? 1 : tailCol === 2 ? 0.1 : 0.01;
+        const exactVal = Math.round(num * factor * 100) / 100;
+        const totalHundredths = Math.round(exactVal * 100);
+        const tens = Math.floor(totalHundredths / 1000);
+        const ones = Math.floor((totalHundredths % 1000) / 100);
+        const tenths = Math.floor((totalHundredths % 100) / 10);
+        const hundredths = totalHundredths % 10;
+
+        const eqText =
+          tailCol === 3 && num % 10 === 0 ? `= ${exactVal.toFixed(2)} (${exactVal})` : `= ${exactVal}`;
+        document.getElementById("t3-result-eq").textContent = eqText;
+        document.getElementById("t3-shift-left").disabled = tailCol <= 0;
+        document.getElementById("t3-shift-right").disabled = tailCol >= 3;
+
+        const unitName = tailCol === 0 ? "10" : tailCol === 1 ? "1" : tailCol === 2 ? "0.1" : "0.01";
+        document.getElementById("t3-summary-lbl").textContent = `${num} 個 ${unitName} ＝ ${exactVal}`;
+        applyBlind();
+
+        // 繪製積木視覺
+        const vis = document.getElementById("t3-blocks-visual");
+        vis.innerHTML = "";
+
+        if (tens > 0) {
+          const row = document.createElement("div");
+          row.className = "block-row";
+          row.innerHTML = `<span class="row-lbl">${tens} 疊 (10)</span>`;
+          const showN = Math.min(tens, 12);
+          for (let i = 0; i < showN; i++) {
+            const b = document.createElement("div");
+            b.className = "blk-10";
+            b.textContent = "10";
+            row.appendChild(b);
+          }
+          if (tens > 12) row.innerHTML += `<span style="font-weight:900">…共 ${tens} 個</span>`;
+          vis.appendChild(row);
+        }
+
+        const row1 = document.createElement("div");
+        row1.className = "block-row";
+        row1.innerHTML = `<span class="row-lbl">${ones} 大張 (1)</span>`;
+        if (ones === 0) {
+          row1.innerHTML += `<span style="color:#94a3b8;font-weight:800">0 張（沒有滿 1）</span>`;
+        } else {
+          for (let i = 0; i < ones; i++) {
+            const b = document.createElement("div");
+            b.className = "blk-1";
+            b.textContent = "1";
+            row1.appendChild(b);
+          }
+        }
+        vis.appendChild(row1);
+
+        const row01 = document.createElement("div");
+        row01.className = "block-row";
+        row01.innerHTML = `<span class="row-lbl">${tenths} 條 (0.1)</span>`;
+        if (tenths === 0) {
+          row01.innerHTML += `<span style="color:#94a3b8;font-weight:800">0 條</span>`;
+        } else {
+          for (let i = 0; i < tenths; i++) {
+            const b = document.createElement("div");
+            b.className = "blk-01";
+            row01.appendChild(b);
+          }
+        }
+        vis.appendChild(row01);
+
+        const row001 = document.createElement("div");
+        row001.className = "block-row";
+        row001.innerHTML = `<span class="row-lbl">${hundredths} 顆 (0.01)</span>`;
+        if (hundredths === 0) {
+          row001.innerHTML += `<span style="color:#94a3b8;font-weight:800">0 顆</span>`;
+        } else {
+          for (let i = 0; i < hundredths; i++) {
+            const b = document.createElement("div");
+            b.className = "blk-001";
+            row001.appendChild(b);
+          }
+        }
+        vis.appendChild(row001);
+      }
+
+      /* ==================== TAB 4：雙胞胎快篩 ==================== */
+      const presetQuestions = [
+        {
+          prompt: `百格板塗了 <span class="hl">7 顆</span>，是多少張？`,
+          choices: ["0.7", "0.07"],
+          correct: "0.07",
+          miniType: "grid",
+          miniVal: 7,
+          catchphrase: "0 條 7 顆 → 十分位空著派 0 顧門，寫 0.07！",
+          proofType: "gridCompare",
+          okLabel: "0.07 ＝ 7 顆",
+          okVal: 7,
+          badLabel: "0.7 ＝ 7 整條 (70 顆!)",
+          badVal: 70
+        },
+        {
+          prompt: `<span class="hl">63 個 0.01</span> 合起來是多少？`,
+          choices: ["6.3", "0.63"],
+          correct: "0.63",
+          miniType: "dots",
+          miniVal: 63,
+          catchphrase: "不到 100 顆 → 沒滿 1 張，個位只能是 0！",
+          proofType: "plateCompare",
+          okLabel: "0.63 ＝ 6 條 3 顆",
+          okOnes: 0,
+          okTenths: 6,
+          okDots: 3,
+          badLabel: "6.3 ＝ 6 大張 3 條 (630 顆!)",
+          badOnes: 6,
+          badTenths: 3,
+          badDots: 0
+        },
+        {
+          prompt: `<span class="hl">63 個 0.1</span> 合起來是多少？`,
+          choices: ["0.63", "6.3"],
+          correct: "6.3",
+          miniType: "strips",
+          miniVal: 63,
+          catchphrase: "這次單位是「條(0.1)」！3 踩在十分位 → 6.3！",
+          proofType: "plateCompare",
+          okLabel: "6.3 ＝ 6 大張 ＋ 3 條",
+          okOnes: 6,
+          okTenths: 3,
+          okDots: 0,
+          badLabel: "0.63 ＝ 6 條 3 顆（太小了！）",
+          badOnes: 0,
+          badTenths: 6,
+          badDots: 3
+        },
+        {
+          prompt: `<span class="hl">107 個 0.01</span> 合起來是多少？`,
+          choices: ["0.107", "1.7", "1.07"],
+          correct: "1.07",
+          miniType: "dots",
+          miniVal: 107,
+          catchphrase: "100 顆＝1 大張，多出 7 顆 → 1 張 0 條 7 顆 ＝ 1.07！",
+          proofType: "plateCompare",
+          okLabel: "1.07 ＝ 1 張 0 條 7 顆",
+          okOnes: 1,
+          okTenths: 0,
+          okDots: 7,
+          badLabel: "1.7 ＝ 1 張 7 條 (170 顆!)",
+          badOnes: 1,
+          badTenths: 7,
+          badDots: 0
+        },
+        {
+          prompt: `跳遠 <span class="hl">1 公尺 9 公分</span> 是幾公尺？`,
+          choices: ["1.9 公尺", "1.09 公尺"],
+          correct: "1.09 公尺",
+          miniType: "ruler",
+          miniCm: 109,
+          catchphrase: "9 公分沒滿 10 公分 → 十分位寫 0 佔位，是 1.09m！",
+          proofType: "rulerCompare",
+          okLabel: "1.09m ＝ 1m 9cm",
+          okCm: 109,
+          badLabel: "1.9m ＝ 1m 90cm (多了 81cm!)",
+          badCm: 190
+        },
+        {
+          prompt: `<span class="hl">1.2 公尺</span> 是幾公尺幾公分？`,
+          choices: ["1m 2cm", "1m 20cm"],
+          correct: "1m 20cm",
+          miniType: "ruler",
+          miniCm: 120,
+          catchphrase: "2 站在十分位（十公分位）→ 把隱形 0 叫回來＝ 1.20m ＝ 1m 20cm！",
+          proofType: "rulerCompare",
+          okLabel: "1.2m ＝ 1.20m ＝ 1m 20cm",
+          okCm: 120,
+          badLabel: "1m 2cm ＝ 1.02m",
+          badCm: 102
+        }
+      ];
+
+      function generateRandomQ() {
+        const kind = Math.floor(Math.random() * 4);
+        if (kind === 0) {
+          const d = [3, 4, 5, 6, 8, 9][Math.floor(Math.random() * 6)];
+          return {
+            prompt: `百格板塗了 <span class="hl">${d} 顆</span>，是多少張？`,
+            choices: [`0.${d}`, `0.0${d}`],
+            correct: `0.0${d}`,
+            miniType: "grid",
+            miniVal: d,
+            catchphrase: `0 條 ${d} 顆 → 十分位派 0 顧門，寫 0.0${d}！`,
+            proofType: "gridCompare",
+            okLabel: `0.0${d} ＝ ${d} 顆`,
+            okVal: d,
+            badLabel: `0.${d} ＝ ${d} 整條 (${d * 10} 顆!)`,
+            badVal: d * 10
+          };
+        }
+        if (kind === 1) {
+          const tens = Math.floor(Math.random() * 7) + 2;
+          const ones = Math.floor(Math.random() * 8) + 1;
+          const n = tens * 10 + ones;
+          return {
+            prompt: `<span class="hl">${n} 個 0.01</span> 合起來是多少？`,
+            choices: [`${tens}.${ones}`, `0.${n}`],
+            correct: `0.${n}`,
+            miniType: "dots",
+            miniVal: n,
+            catchphrase: `才 ${n} 顆不到 100 顆 → 0 開頭，${n} 顆變 ${tens} 條 ${ones} 顆！`,
+            proofType: "plateCompare",
+            okLabel: `0.${n} ＝ ${tens} 條 ${ones} 顆`,
+            okOnes: 0,
+            okTenths: tens,
+            okDots: ones,
+            badLabel: `${tens}.${ones} ＝ ${tens} 大張 ${ones} 條 (${n * 10} 顆!)`,
+            badOnes: tens,
+            badTenths: ones,
+            badDots: 0
+          };
+        }
+        if (kind === 2) {
+          const tens = Math.floor(Math.random() * 6) + 2;
+          const ones = Math.floor(Math.random() * 8) + 1;
+          const n = tens * 10 + ones;
+          return {
+            prompt: `<span class="hl">${n} 個 0.1</span> 合起來是多少？`,
+            choices: [`0.${n}`, `${tens}.${ones}`],
+            correct: `${tens}.${ones}`,
+            miniType: "strips",
+            miniVal: n,
+            catchphrase: `${n} 條(0.1) → 每 10 條換 1 張，可換成 ${tens} 張又 ${ones} 條！`,
+            proofType: "plateCompare",
+            okLabel: `${tens}.${ones} ＝ ${tens} 張 ${ones} 條`,
+            okOnes: tens,
+            okTenths: ones,
+            okDots: 0,
+            badLabel: `0.${n} ＝ ${tens} 條 ${ones} 顆`,
+            badOnes: 0,
+            badTenths: tens,
+            badDots: ones
+          };
+        }
+        const cm = Math.floor(Math.random() * 8) + 2;
+        return {
+          prompt: `<span class="hl">1 公尺 ${cm} 公分</span> 是幾公尺？`,
+          choices: [`1.${cm} 公尺`, `1.0${cm} 公尺`],
+          correct: `1.0${cm} 公尺`,
+          miniType: "ruler",
+          miniCm: 100 + cm,
+          catchphrase: `${cm} 公分沒滿 10 公分 → 十分位補 0，是 1.0${cm} 公尺！`,
+          proofType: "rulerCompare",
+          okLabel: `1.0${cm}m ＝ 1m ${cm}cm`,
+          okCm: 100 + cm,
+          badLabel: `1.${cm}m ＝ 1m ${cm * 10}cm`,
+          badCm: 100 + cm * 10
+        };
+      }
+
+      document.querySelectorAll("#t4-q-tabs [data-q]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          state.t4.qIndex = Number(btn.dataset.q);
+          state.t4.customQ = null;
+          state.t4.picked = null;
+          state.t4.revealed = false;
+          renderT4();
+        });
+      });
+
+      document.getElementById("btn-rand-q").addEventListener("click", () => {
+        state.t4.customQ = generateRandomQ();
+        state.t4.picked = null;
+        state.t4.revealed = false;
+        renderT4();
+      });
+
+      document.getElementById("btn-reveal").addEventListener("click", () => {
+        state.t4.revealed = true;
+        renderT4();
+      });
+
+      function buildMiniSVGGrid(filledCount, color = "#fde047", size = 120) {
+        let html = `<div style="width:${size}px;height:${size}px;display:grid;grid-template-columns:repeat(10,1fr);border:2px solid #334155;border-radius:4px;background:#fff;overflow:hidden">`;
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const idx = c * 10 + r;
+            const bg = idx < filledCount ? color : "#fff";
+            html += `<div style="border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;background:${bg}"></div>`;
+          }
+        }
+        html += "</div>";
+        return html;
+      }
+
+      function renderPlateSummary(ones, tenths, dots) {
+        let html = `<div style="display:flex;align-items:center;flex-wrap:wrap;gap:6px;justify-content:center">`;
+        for (let i = 0; i < ones; i++) {
+          html += `<div class="mini-plate">1張</div>`;
+        }
+        for (let i = 0; i < tenths; i++) {
+          html += `<div class="mini-strip"></div>`;
+        }
+        for (let i = 0; i < dots; i++) {
+          html += `<div style="width:10px;height:10px;border-radius:2px;background:#fde047;border:1.5px solid #ca8a04"></div>`;
+        }
+        if (ones === 0 && tenths === 0 && dots === 0) {
+          html += `<span style="color:#94a3b8;font-weight:800">0</span>`;
+        }
+        html += `</div>`;
+        return html;
+      }
+
+      function renderT4() {
+        const q = state.t4.customQ || presetQuestions[state.t4.qIndex];
+        document.querySelectorAll("#t4-q-tabs [data-q]").forEach((b) => {
+          b.classList.toggle("on", !state.t4.customQ && Number(b.dataset.q) === state.t4.qIndex);
+        });
+
+        document.getElementById("q-tag").textContent = state.t4.customQ
+          ? "🎲 隨機雙胞胎挑戰"
+          : `雙胞胎快篩 #${state.t4.qIndex + 1}`;
+        document.getElementById("q-prompt").innerHTML = q.prompt;
+
+        // 題幹小圖示
+        const miniVis = document.getElementById("q-mini-vis");
+        if (q.miniType === "grid") {
+          miniVis.innerHTML = buildMiniSVGGrid(q.miniVal, "#fde047", 130);
+        } else if (q.miniType === "dots") {
+          miniVis.innerHTML = `<span style="font-size:20px;font-weight:900;color:#854d0e">🟨 × ${q.miniVal} 顆（每顆 0.01）</span>`;
+        } else if (q.miniType === "strips") {
+          miniVis.innerHTML = `<span style="font-size:20px;font-weight:900;color:#c2410c">🟧 × ${q.miniVal} 條（每條 0.1）</span>`;
+        } else {
+          miniVis.innerHTML = `<span style="font-size:20px;font-weight:900;color:#1e40af">📏 1 公尺 ＝ 100 公分</span>`;
+        }
+
+        // 選項按鈕
+        const choicesEl = document.getElementById("q-choices");
+        choicesEl.style.gridTemplateColumns = `repeat(${q.choices.length}, 1fr)`;
+        choicesEl.innerHTML = "";
+        q.choices.forEach((ch) => {
+          const btn = document.createElement("button");
+          btn.className = "choice-btn num-font";
+          if (!state.t4.revealed && state.t4.picked === ch) btn.classList.add("picked");
+          if (state.t4.revealed) {
+            if (ch === q.correct) btn.classList.add("correct");
+            else if (state.t4.picked === ch) btn.classList.add("wrong");
+          }
+          btn.textContent = ch;
+          btn.addEventListener("click", () => {
+            if (state.t4.revealed) return;
+            state.t4.picked = ch;
+            renderT4();
+          });
+          choicesEl.appendChild(btn);
+        });
+
+        // 揭曉區
+        const badge = document.getElementById("q-status-badge");
+        const proofEl = document.getElementById("q-proof");
+        const catchEl = document.getElementById("q-catchphrase");
+
+        if (!state.t4.revealed) {
+          badge.textContent = state.t4.picked ? `已選 ${state.t4.picked}，按揭曉！` : "等待學生作答…";
+          badge.style.background = "#f1f5f9";
+          badge.style.color = "#64748b";
+          proofEl.innerHTML = `<div style="font-size:20px;font-weight:800;color:#94a3b8">先讓學生說原因，再按「揭曉」</div>`;
+          catchEl.textContent = "👀 先想：張（1）・條（0.1）・顆（0.01）";
+          return;
+        }
+
+        const isCorrect = state.t4.picked === q.correct;
+        badge.textContent = state.t4.picked ? (isCorrect ? "✅ 答對！" : "❌ 掉進陷阱了！") : `正解：${q.correct}`;
+        badge.style.background = isCorrect ? "var(--ok-soft)" : "#dbeafe";
+        badge.style.color = isCorrect ? "var(--ok)" : "#1e40af";
+        catchEl.textContent = `💡 ${q.catchphrase}`;
+
+        if (q.proofType === "gridCompare") {
+          proofEl.innerHTML = `
+            <div class="proof-compare">
+              <div class="proof-box ok">
+                <strong style="color:#15803d;font-size:18px">✅ ${q.okLabel}</strong>
+                ${buildMiniSVGGrid(q.okVal, "#fde047", 150)}
+              </div>
+              <div class="proof-box bad">
+                <strong style="color:#b91c1c;font-size:18px">❌ ${q.badLabel}</strong>
+                ${buildMiniSVGGrid(q.badVal, "#fb923c", 150)}
+              </div>
+            </div>
+          `;
+        } else if (q.proofType === "plateCompare") {
+          proofEl.innerHTML = `
+            <div class="proof-compare">
+              <div class="proof-box ok">
+                <strong style="color:#15803d;font-size:17px">✅ ${q.okLabel}</strong>
+                ${renderPlateSummary(q.okOnes, q.okTenths, q.okDots)}
+              </div>
+              <div class="proof-box bad">
+                <strong style="color:#b91c1c;font-size:17px">❌ ${q.badLabel}</strong>
+                ${renderPlateSummary(q.badOnes, q.badTenths, q.badDots)}
+              </div>
+            </div>
+          `;
+        } else if (q.proofType === "rulerCompare") {
+          const pctOk = Math.min(100, (q.okCm / 200) * 100);
+          const pctBad = Math.min(100, (q.badCm / 200) * 100);
+          const segs = `<div class="ruler-mid-line"></div>` + `<div class="ruler-seg"></div>`.repeat(20);
+          proofEl.innerHTML = `
+            <div style="width:100%;display:flex;flex-direction:column;gap:14px">
+              <div class="proof-box ok" style="align-items:stretch">
+                <strong style="color:#15803d;font-size:18px">✅ ${q.okLabel}</strong>
+                <div class="ruler-bar">
+                  <div class="ruler-fill" style="width:${pctOk}%;background:rgba(22,163,74,0.4);border-color:#15803d"></div>
+                  ${segs}
+                </div>
+              </div>
+              <div class="proof-box bad" style="align-items:stretch">
+                <strong style="color:#b91c1c;font-size:18px">❌ ${q.badLabel}</strong>
+                <div class="ruler-bar">
+                  <div class="ruler-fill" style="width:${pctBad}%;background:rgba(220,38,38,0.38);border-color:#b91c1c"></div>
+                  ${segs}
+                </div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;color:#64748b">
+                <span>0m</span><span style="color:#0f172a">1m (100cm 滿!)</span><span>2m (200cm)</span>
+              </div>
+            </div>
+          `;
+        }
+      }
+
+      /* 初始渲染 */
+      renderT1();
+      renderT2();
+      renderT3();
+      renderT4();
+    </script>
+  </body>
+</html>
