@@ -403,6 +403,60 @@
         background: #fed7aa;
       }
 
+      .tenth-grid {
+        width: 100%;
+        height: 100%;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: 1fr;
+        border: 3px solid #334155;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        touch-action: none;
+        cursor: pointer;
+      }
+
+      .strip-cell {
+        border-right: 2px solid #334155;
+        transition: background-color 0.12s ease;
+      }
+
+      .strip-cell:last-child {
+        border-right: none;
+      }
+
+      .strip-cell.filled-right {
+        background: #fb923c;
+      }
+
+      .tenth-grid.dim-for-compare .strip-cell.filled-right {
+        background: #fed7aa;
+      }
+
+      .ghost-hundred-layer {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(10, 1fr);
+        pointer-events: none;
+        border-radius: 8px;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.2s ease;
+      }
+
+      .ghost-hundred-layer.show {
+        opacity: 1;
+      }
+
+      .ghost-cell.ghost-overlay {
+        background: rgba(250, 204, 21, 0.96);
+        box-shadow: inset 0 0 0 2.5px #b91c1c;
+        animation: pulseGhost 0.85s ease-in-out infinite alternate;
+      }
+
       @keyframes pulseGhost {
         from {
           transform: scale(0.92);
@@ -1480,21 +1534,20 @@
               <div class="ratio-pill" id="ratio-pill">差 10 倍！</div>
             </div>
 
-            <!-- 右板 -->
+            <!-- 右板（平分成 10 份） -->
             <div class="board-card">
               <div class="board-top">
                 <div class="board-title">
                   <span style="color: #ea580c">■</span> 右板（點擊或拖曳塗色）
                 </div>
-                <div class="brush-toggle" data-side="right">
-                  <button class="brush-btn" data-mode="cell">塗 1 顆</button>
-                  <button class="brush-btn on" data-mode="strip">塗 1 條</button>
-                </div>
+                <span class="badge" style="background: #ffedd5; color: #9a3412; font-size: 13px">
+                  平分成 10 份（每條 0.1）
+                </span>
               </div>
 
               <div class="grid-wrap">
-                <div class="hundred-grid" id="grid-right"></div>
-                <div class="tenth-overlay show" id="overlay-right"></div>
+                <div class="tenth-grid" id="grid-right"></div>
+                <div class="ghost-hundred-layer" id="ghost-right"></div>
               </div>
 
               <div class="readout-box">
@@ -1735,7 +1788,8 @@
         state.t1.left.clear();
         state.t1.right.clear();
         for (let i = 0; i < leftCount; i++) state.t1.left.add(i);
-        for (let i = 0; i < rightCount; i++) state.t1.right.add(i);
+        const rightStrips = Math.round(rightCount / 10);
+        for (let c = 0; c < rightStrips; c++) state.t1.right.add(c);
         state.t1.overlayCompare = false;
       }
       initPresetT1(7, 70);
@@ -1865,8 +1919,62 @@
         });
       }
 
+      function buildRightTenthDOM(gridEl, ghostEl) {
+        gridEl.innerHTML = "";
+        ghostEl.innerHTML = "";
+        for (let c = 0; c < 10; c++) {
+          const strip = document.createElement("div");
+          strip.className = "strip-cell";
+          strip.dataset.col = c;
+          gridEl.appendChild(strip);
+        }
+        for (let r = 0; r < 10; r++) {
+          for (let c = 0; c < 10; c++) {
+            const idx = c * 10 + r;
+            const gCell = document.createElement("div");
+            gCell.className = "ghost-cell";
+            gCell.dataset.idx = idx;
+            ghostEl.appendChild(gCell);
+          }
+        }
+
+        let painting = false;
+        let paintAction = true;
+
+        function applyStripPaint(target) {
+          if (!target || !target.classList.contains("strip-cell")) return;
+          const col = Number(target.dataset.col);
+          if (paintAction) state.t1.right.add(col);
+          else state.t1.right.delete(col);
+          state.t1.overlayCompare = false;
+          renderT1();
+        }
+
+        gridEl.addEventListener("pointerdown", (e) => {
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          if (!target || !target.classList.contains("strip-cell")) return;
+          gridEl.setPointerCapture(e.pointerId);
+          painting = true;
+          paintAction = !state.t1.right.has(Number(target.dataset.col));
+          applyStripPaint(target);
+        });
+
+        gridEl.addEventListener("pointermove", (e) => {
+          if (!painting) return;
+          const target = document.elementFromPoint(e.clientX, e.clientY);
+          applyStripPaint(target);
+        });
+
+        gridEl.addEventListener("pointerup", () => {
+          painting = false;
+        });
+        gridEl.addEventListener("pointercancel", () => {
+          painting = false;
+        });
+      }
+
       buildGridDOM(document.getElementById("grid-left"), document.getElementById("overlay-left"), "left");
-      buildGridDOM(document.getElementById("grid-right"), document.getElementById("overlay-right"), "right");
+      buildRightTenthDOM(document.getElementById("grid-right"), document.getElementById("ghost-right"));
 
       document.querySelectorAll("[data-t1-preset]").forEach((btn) => {
         btn.addEventListener("click", () => {
@@ -1910,20 +2018,50 @@
       });
 
       function renderSideT1(side) {
+        if (side === "right") {
+          const strips = state.t1.right.size;
+          const gridEl = document.getElementById("grid-right");
+          const ghostEl = document.getElementById("ghost-right");
+          const showGhostLayer = state.t1.overlayCompare && state.t1.left.size > 0;
+
+          gridEl.classList.toggle("dim-for-compare", showGhostLayer);
+          gridEl.querySelectorAll(".strip-cell").forEach((strip) => {
+            strip.classList.toggle("filled-right", state.t1.right.has(Number(strip.dataset.col)));
+          });
+
+          ghostEl.classList.toggle("show", showGhostLayer);
+          ghostEl.querySelectorAll(".ghost-cell").forEach((cell) => {
+            const idx = Number(cell.dataset.idx);
+            cell.classList.toggle("ghost-overlay", showGhostLayer && idx < state.t1.left.size);
+          });
+
+          document.getElementById("tags-right").innerHTML = `
+            <div class="tag-unit strip">
+              <span class="tag-val num-font">${strips}</span>
+              <span class="tag-lbl">整條(0.1)</span>
+            </div>
+            <div style="font-size:13px;font-weight:800;color:#64748b;margin-left:4px">(${strips} / 10 張)</div>
+          `;
+
+          const decEl = document.getElementById("dec-right");
+          if (strips === 10) {
+            decEl.innerHTML = `1<span class="z-tail ${state.t1.showTailZero ? "" : "hidden-tail"}">.0</span>`;
+          } else {
+            const tailZero = strips > 0 ? `<span class="z-tail ${state.t1.showTailZero ? "" : "hidden-tail"}">0</span>` : "";
+            decEl.innerHTML = `0.${strips}${tailZero}`;
+          }
+          return;
+        }
+
         const set = state.t1[side];
         const count = set.size;
         const gridEl = document.getElementById(`grid-${side}`);
         const overlayEl = document.getElementById(`overlay-${side}`);
-        const fillClass = side === "left" ? "filled-left" : "filled-right";
+        const fillClass = "filled-left";
 
-        gridEl.classList.toggle("dim-for-compare", side === "right" && state.t1.overlayCompare && state.t1.left.size > 0);
         gridEl.querySelectorAll(".cell").forEach((cell) => {
           const idx = Number(cell.dataset.idx);
-          const isFilled = set.has(idx);
-          cell.classList.toggle(fillClass, isFilled);
-          const showGhost =
-            side === "right" && state.t1.overlayCompare && idx < state.t1.left.size && state.t1.left.size > 0;
-          cell.classList.toggle("ghost-overlay", showGhost);
+          cell.classList.toggle(fillClass, set.has(idx));
         });
 
         overlayEl.classList.toggle("show", state.t1.showLines);
@@ -1974,7 +2112,7 @@
         renderSideT1("left");
         renderSideT1("right");
         const l = state.t1.left.size;
-        const r = state.t1.right.size;
+        const r = state.t1.right.size * 10;
         document.getElementById("vs-symbol").textContent = l < r ? "<" : l > r ? ">" : "=";
 
         const ratioPill = document.getElementById("ratio-pill");
